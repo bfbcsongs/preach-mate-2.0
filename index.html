@@ -22,40 +22,23 @@ input,button,select,textarea{font-size:16px}
 #app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .topbar{min-height:58px;background:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;padding-top:max(8px,env(safe-area-inset-top))}
 .brand{font-size:20px;font-weight:800;flex:1}
-  
 .brand-wrap{
-  flex:1;
-  min-width:0;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:3px;
+  flex:1;min-width:0;display:flex;align-items:center;
+  justify-content:space-between;gap:3px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .brand-wrap .brand{min-width:0}
 .brand-logo{
-  width:90px;
-  height:90px;
-  flex-shrink:0;
-  object-fit:contain;
-  border-radius:7px;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
+  width:90px;height:90px;flex-shrink:0;object-fit:contain;
+  border-radius:7px;cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .brand-logo.hidden{display:none!important}
 .drawer-brand-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
-.drawer-brand-row .drawer-title{
-  flex:1;
-  min-width:0;
-}
-.drawer-brand-row .brand-logo{
-  width:40px;
-  height:40px;
-}
+.drawer-brand-row .drawer-title{flex:1;min-width:0}
+.drawer-brand-row .brand-logo{width:40px;height:40px}
 .icon-btn{border:0;background:transparent;border-radius:10px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;color:var(--text);flex-shrink:0}
 .icon-btn:active{background:var(--border)}
 .searchbar{padding:9px 12px 5px;background:#fff;flex-shrink:0}
@@ -117,33 +100,18 @@ input,button,select,textarea{font-size:16px}
 .note-body blockquote{border-left:3px solid #9ca3af;margin:8px 0;padding-left:12px;color:#4b5563}
 .note-body ul,.note-body ol{padding-left:25px;margin-top:6px;margin-bottom:8px}
 
-/* READ MODE MARKER: stable inline text, no vibration or layout shifting. */
+/* READ MODE MARKER */
 .read-word-marker{
-  display:inline!important;
-  position:relative;
-  padding:0!important;
-  margin:0!important;
-  color:#ffeb3b!important;
-  background:#8f7910!important;
-  border:0!important;
-  outline:1px solid #ffe45c;
-  outline-offset:0;
-  border-radius:1px;
-  box-shadow:none!important;
-  text-shadow:0 0 1px rgba(255,244,163,.65);
-  font-family:inherit!important;
-  font-size:inherit!important;
-  font-weight:400!important;
-  -webkit-text-stroke:0!important;
-  line-height:inherit!important;
-  -webkit-box-decoration-break:clone;
-  box-decoration-break:clone;
-  animation:none!important;
-  transform:none!important;
-  will-change:auto;
+  display:inline!important;position:relative;padding:0!important;margin:0!important;
+  color:#ffeb3b!important;background:#8f7910!important;border:0!important;
+  outline:1px solid #ffe45c;outline-offset:0;border-radius:1px;
+  box-shadow:none!important;text-shadow:0 0 1px rgba(255,244,163,.65);
+  font-family:inherit!important;font-size:inherit!important;font-weight:400!important;
+  -webkit-text-stroke:0!important;line-height:inherit!important;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  animation:none!important;transform:none!important;will-change:auto;
 }
 .read-word-marker::after{content:none!important;display:none!important}
-
 .editor-toolbar{position:fixed;left:0;right:0;bottom:0;min-height:49px;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;align-items:center;gap:2px;padding:5px 5px calc(5px + env(safe-area-inset-bottom));z-index:45;box-shadow:0 -3px 12px #0000000a}
 .fmt-btn{min-width:30px;height:38px;border:1px solid transparent;border-radius:8px;background:transparent;color:#1f2937;display:inline-flex;align-items:center;justify-content:center;font-size:16px;padding:5px 4px;flex:1;max-width:55px}
 .fmt-btn:active,.fmt-btn.active{background:#e5e7eb}
@@ -191,52 +159,43 @@ input,button,select,textarea{font-size:16px}
 <div id="app">
   <header class="topbar">
     <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
-    
-<div class="brand-wrap">
-  <div class="brand-wrap">
-  <div>
-    <div class="brand">POTTER'S HOUSE</div>
-    <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">
-  ILAGAN
-</small>
-  </div>
 
-  <img id="topbarLogo"
-       class="brand-logo hidden"
-       alt="Preach Mate logo"
-       title="Upload or change logo">
-</div>
-  <img id="topbarLogo"
-       class="brand-logo hidden"
-       alt="Preach Mate logo"
-       title="Upload or change logo">
-</div>
+    <div class="brand-wrap" id="topbarBrand" title="Tap 5 times to change logo">
+      <div>
+        <div class="brand">POTTER'S HOUSE</div>
+        <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">ILAGAN</small>
+      </div>
+      <img id="topbarLogo" class="brand-logo hidden" alt="Church logo">
+    </div>
+
     <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
   </header>
-  <div class="searchbar"><input id="searchInput" type="search" placeholder="Search notes..." autocomplete="off" aria-label="Search notes"></div>
+
+  <div class="searchbar">
+    <input id="searchInput" type="search" placeholder="Search notes..." autocomplete="off" aria-label="Search notes">
+  </div>
   <nav class="category-row" id="categoryTabs" aria-label="Categories"></nav>
   <main class="home-content">
     <div class="section-heading" id="notesCount">Your notes</div>
     <div class="notes-grid" id="notesGrid"></div>
-    <div class="empty-state hidden" id="emptyState"><div style="font-size:38px;margin-bottom:8px">📝</div><strong>No notes found</strong><div>Create a note using the + button.</div></div>
+    <div class="empty-state hidden" id="emptyState">
+      <div style="font-size:38px;margin-bottom:8px">📝</div>
+      <strong>No notes found</strong>
+      <div>Create a note using the + button.</div>
+    </div>
   </main>
   <button class="fab" id="btnNewNote" aria-label="Create new note">+</button>
 </div>
 
 <div class="drawer-backdrop hidden" id="drawerBackdrop">
   <aside class="drawer">
-    
-<div class="drawer-brand-row">
-  <div class="drawer-title">
-    POTTER'S HOUSE
-    <small style="display:block;font-size:12px;font-weight:500;color:#16a34a;margin-top:4px">ILAGAN.</small>
-  </div>
-  <img id="drawerLogo"
-       class="brand-logo hidden"
-       alt="Preach Mate logo"
-       title="Upload or change logo">
-</div>
-<button class="drawer-item" id="drawerLogoUpload">▧ &nbsp; Upload / Change Logo</button>
+    <div class="drawer-brand-row" id="drawerBrand" title="Tap 5 times to change logo">
+      <div class="drawer-title">
+        POTTER'S HOUSE
+        <small style="display:block;font-size:12px;font-weight:500;color:#16a34a;margin-top:4px">ILAGAN.</small>
+      </div>
+      <img id="drawerLogo" class="brand-logo hidden" alt="Church logo">
+    </div>
     <button class="drawer-item" id="drawerHome">⌂ &nbsp; All Notes</button>
     <button class="drawer-item" id="drawerFavorites">☆ &nbsp; Favorites</button>
     <button class="drawer-item" id="drawerNewCategory">⊞ &nbsp; Add Category</button>
@@ -280,7 +239,10 @@ input,button,select,textarea{font-size:16px}
 </div>
 
 <div class="color-palette hidden" id="colorPalette">
-  <div class="palette-heading"><span id="paletteTitle">Choose color</span><button class="palette-close" id="paletteClose" aria-label="Close color palette">×</button></div>
+  <div class="palette-heading">
+    <span id="paletteTitle">Choose color</span>
+    <button class="palette-close" id="paletteClose" aria-label="Close color palette">×</button>
+  </div>
   <div class="palette-colors" id="paletteColors"></div>
 </div>
 
@@ -295,15 +257,18 @@ input,button,select,textarea{font-size:16px}
   </div>
 </div>
 <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
-
 <input type="file" id="logoFileInput" accept="image/*" class="hidden">
-  
+
 <script>
 (() => {
 "use strict";
+
 const $ = id => document.getElementById(id);
 const STORAGE_KEY = "notepal_notes_v2";
 const CATEGORIES_KEY = "notepal_categories_v2";
+const LOGO_KEY = "preach_mate_logo_v1";
+const MAX_LOGO_BYTES = 21 * 1024;
+
 const COLORS = [
   {name:"Yellow",value:"#fef08a"},
   {name:"Gold",value:"#fde047"},
@@ -328,8 +293,13 @@ const COLORS = [
   {name:"Rose",value:"#e11d48"}
 ];
 
-function makeId(){return "n_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8)}
-function parseJSON(v,f){try{return JSON.parse(v)??f}catch(e){return f}}
+function makeId(){
+  return "n_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);
+}
+function parseJSON(v,f){
+  try{return JSON.parse(v)??f}catch(e){return f}
+}
+
 const DEFAULT_CATEGORIES=["All Notes","Personal","Study","Work","Ideas"];
 let categories=parseJSON(localStorage.getItem(CATEGORIES_KEY),DEFAULT_CATEGORIES);
 if(!Array.isArray(categories)||!categories.length)categories=[...DEFAULT_CATEGORIES];
@@ -339,19 +309,20 @@ categories=["All Notes",...categories.filter(c=>c!=="All Notes")];
 let notes=parseJSON(localStorage.getItem(STORAGE_KEY),null);
 if(!Array.isArray(notes)){
   notes=[{
-    id:makeId(),title:"Welcome to Preach Mate",
+    id:makeId(),
+    title:"Welcome to Preach Mate",
     content:"<p>Your notes are saved automatically on this device.</p><p><b>Read Mode:</b> Tap a word to temporarily mark where you stopped reading.</p><p><b>Edit Mode:</b> Select text, then choose highlight or font color from the toolbar.</p>",
     category:"Personal",favorite:false,pinned:false,fontSize:17,color:"#111827",updated:Date.now()
   }];
 }
-if(Array.isArray(notes)){
-  notes.forEach(n=>{if(typeof n.pinned!=="boolean")n.pinned=false});
-}
+notes.forEach(n=>{
+  if(typeof n.pinned!=="boolean")n.pinned=false;
+  if(typeof n.favorite!=="boolean")n.favorite=false;
+});
 
 let activeCategory="All Notes",favoritesOnly=false,currentNoteId=null,isEditMode=false;
 let dialogAction=null,toastTimer=null,markerSpan=null,savedSelection=null;
-let paletteType="highlight";
-let dragInfo=null,suppressCategoryClick=false;
+let paletteType="highlight",dragInfo=null,suppressCategoryClick=false;
 let saveStatusTimer=null;
 
 const home=$("app"),editor=$("editorScreen"),noteTitle=$("noteTitle"),noteBody=$("noteBody");
@@ -381,9 +352,12 @@ function persist(){
     return false;
   }
 }
-function currentNote(){return notes.find(n=>n.id===currentNoteId)||null}
+function currentNote(){
+  return notes.find(n=>n.id===currentNoteId)||null;
+}
 function plainText(html){
-  const box=document.createElement("div");box.innerHTML=html||"";
+  const box=document.createElement("div");
+  box.innerHTML=html||"";
   return (box.innerText||box.textContent||"").replace(/\s+/g," ").trim();
 }
 function esc(s){
@@ -406,166 +380,145 @@ function highlightSearchTerms(text,query){
   }).join("");
 }
 function showToast(msg){
-  $("toast").textContent=msg;$("toast").classList.remove("hidden");
+  $("toast").textContent=msg;
+  $("toast").classList.remove("hidden");
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>$("toast").classList.add("hidden"),1900);
 }
-  /* PREACH MATE LOGO: LOCAL STORAGE + IMAGE COMPRESSION */
-const LOGO_KEY = "preach_mate_logo_v1";
-const MAX_LOGO_BYTES = 21 * 1024;
 
+/* LOGO: SAVED LOCALLY AND RESTORED ON STARTUP */
 function applySavedLogo(){
-  let data = null;
-  try {
-    data = localStorage.getItem(LOGO_KEY);
-  } catch(e) {}
-
-  ["topbarLogo", "drawerLogo"].forEach(id => {
-    const img = $(id);
-    if(!img) return;
-
+  let data=null;
+  try{data=localStorage.getItem(LOGO_KEY)}catch(e){}
+  ["topbarLogo","drawerLogo"].forEach(id=>{
+    const img=$(id);
+    if(!img)return;
     if(data){
-      img.src = data;
+      img.src=data;
       img.classList.remove("hidden");
-    } else {
+    }else{
       img.removeAttribute("src");
       img.classList.add("hidden");
     }
   });
 }
-
 function chooseLogo(){
-  const input = $("logoFileInput");
-  if(!input) return;
-  input.value = "";
+  const input=$("logoFileInput");
+  if(!input)return;
+  input.value="";
   input.click();
 }
-
 function compressLogo(file){
-  if(!file || !file.type.startsWith("image/")){
+  if(!file||!file.type.startsWith("image/")){
     showToast("Please select an image.");
     return;
   }
-
-  const reader = new FileReader();
-
-  reader.onerror = () => showToast("Unable to read this image.");
-
-  reader.onload = () => {
-    const image = new Image();
-
-    image.onerror = () => showToast("Unable to open this image.");
-
-    image.onload = () => {
-      const originalWidth = image.naturalWidth;
-      const originalHeight = image.naturalHeight;
-
-      if(!originalWidth || !originalHeight){
+  const reader=new FileReader();
+  reader.onerror=()=>showToast("Unable to read this image.");
+  reader.onload=()=>{
+    const image=new Image();
+    image.onerror=()=>showToast("Unable to open this image.");
+    image.onload=()=>{
+      const originalWidth=image.naturalWidth;
+      const originalHeight=image.naturalHeight;
+      if(!originalWidth||!originalHeight){
         showToast("Invalid image.");
         return;
       }
-
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
+      const canvas=document.createElement("canvas");
+      const ctx=canvas.getContext("2d");
       if(!ctx){
         showToast("Unable to process this image.");
         return;
       }
-
-      const sizes = [320, 280, 240, 200, 160];
-      const qualities = [0.82, 0.70, 0.58, 0.46, 0.34, 0.25];
-
-      let sizeIndex = 0;
-      let qualityIndex = 0;
-      let finished = false;
+      const sizes=[320,280,240,200,160];
+      const qualities=[0.82,0.70,0.58,0.46,0.34,0.25];
+      let sizeIndex=0,qualityIndex=0,finished=false;
 
       function tryCompression(){
-        if(finished) return;
+        if(finished)return;
+        const maxSide=sizes[sizeIndex];
+        const scale=Math.min(1,maxSide/Math.max(originalWidth,originalHeight));
+        canvas.width=Math.max(1,Math.round(originalWidth*scale));
+        canvas.height=Math.max(1,Math.round(originalHeight*scale));
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(image,0,0,canvas.width,canvas.height);
 
-        const maxSide = sizes[sizeIndex];
-        const scale = Math.min(
-          1,
-          maxSide / Math.max(originalWidth, originalHeight)
-        );
-
-        canvas.width = Math.max(1, Math.round(originalWidth * scale));
-        canvas.height = Math.max(1, Math.round(originalHeight * scale));
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(blob => {
-          if(finished) return;
-
+        canvas.toBlob(blob=>{
+          if(finished)return;
           if(!blob){
             showToast("Unable to compress this image.");
             return;
           }
-
-          if(blob.size <= MAX_LOGO_BYTES){
-            finished = true;
-
-            const resultReader = new FileReader();
-
-            resultReader.onerror = () =>
-              showToast("Unable to save the image.");
-
-            resultReader.onload = () => {
-              try {
-                localStorage.setItem(LOGO_KEY, resultReader.result);
+          if(blob.size<=MAX_LOGO_BYTES){
+            finished=true;
+            const resultReader=new FileReader();
+            resultReader.onerror=()=>showToast("Unable to save the image.");
+            resultReader.onload=()=>{
+              try{
+                localStorage.setItem(LOGO_KEY,resultReader.result);
                 applySavedLogo();
                 showToast("Logo saved on this device!");
-              } catch(e) {
+              }catch(e){
                 showToast("Could not save logo. Device storage may be full.");
               }
             };
-
             resultReader.readAsDataURL(blob);
             return;
           }
-
           qualityIndex++;
-
-          if(qualityIndex >= qualities.length){
-            qualityIndex = 0;
+          if(qualityIndex>=qualities.length){
+            qualityIndex=0;
             sizeIndex++;
           }
-
-          if(sizeIndex >= sizes.length){
-            finished = true;
+          if(sizeIndex>=sizes.length){
+            finished=true;
             showToast("Image is too large to compress below 21 KB.");
             return;
           }
-
           tryCompression();
-        }, "image/webp", qualities[qualityIndex]);
+        },"image/webp",qualities[qualityIndex]);
       }
-
       tryCompression();
     };
-
-    image.src = reader.result;
+    image.src=reader.result;
   };
-
   reader.readAsDataURL(file);
 }
 
-$("drawerLogoUpload").addEventListener("click", chooseLogo);
-$("topbarLogo").addEventListener("click", chooseLogo);
-$("drawerLogo").addEventListener("click", chooseLogo);
+/* FIVE TAPS ON THE BRANDING AREA TO CHANGE LOGO */
+function setupLogoFiveTap(id){
+  const area=$(id);
+  if(!area)return;
+  let taps=0,timer=null;
+  area.addEventListener("click",e=>{
+    taps++;
+    clearTimeout(timer);
+    if(taps>=5){
+      taps=0;
+      chooseLogo();
+      return;
+    }
+    timer=setTimeout(()=>{taps=0},2200);
+  });
+}
+setupLogoFiveTap("topbarBrand");
+setupLogoFiveTap("drawerBrand");
 
-$("logoFileInput").addEventListener("change", e => {
-  const file = e.target.files && e.target.files[0];
-  if(file) compressLogo(file);
+$("logoFileInput").addEventListener("change",e=>{
+  const file=e.target.files&&e.target.files[0];
+  if(file)compressLogo(file);
 });
+
 function cleanTemporaryMarker(root){
   root.querySelectorAll(".read-word-marker").forEach(s=>s.replaceWith(...s.childNodes));
 }
 function saveCurrentNote(){
-  const n=currentNote();if(!n)return;
+  const n=currentNote();
+  if(!n)return;
   n.title=noteTitle.value.trim();
-  const clone=noteBody.cloneNode(true);cleanTemporaryMarker(clone);
+  const clone=noteBody.cloneNode(true);
+  cleanTemporaryMarker(clone);
   n.content=clone.innerHTML;
   n.fontSize=parseInt(noteBody.dataset.fontSize||n.fontSize||17,10);
   n.color=noteBody.style.color||n.color||"#111827";
@@ -573,12 +526,18 @@ function saveCurrentNote(){
   setSaveStatus("saving");
   const saved=persist();
   if(saved)scheduleSavedStatus();
-  else{clearTimeout(saveStatusTimer);setSaveStatus("error")}
+  else{
+    clearTimeout(saveStatusTimer);
+    setSaveStatus("error");
+  }
 }
 function togglePin(id){
-  const n=notes.find(x=>x.id===id);if(!n)return;
-  n.pinned=!n.pinned;n.updated=Date.now();
-  persist();renderNotes();
+  const n=notes.find(x=>x.id===id);
+  if(!n)return;
+  n.pinned=!n.pinned;
+  n.updated=Date.now();
+  persist();
+  renderNotes();
   if(currentNoteId===id)updatePinMenu();
   showToast(n.pinned?"📌 Note pinned to top":"Pin removed");
 }
@@ -587,50 +546,66 @@ function updatePinMenu(){
   if(n)$("menuPin").textContent=n.pinned?"📌 Unpin Note":"📌 Pin to Top";
 }
 
-/* Category tabs and drawer share the same saved category order. */
+/* CATEGORIES */
 function renderCategories(){
-  const row=$("categoryTabs");row.innerHTML="";
+  const row=$("categoryTabs");
+  row.innerHTML="";
   const ordered=["All Notes",...categories.filter(c=>c!=="All Notes")];
   ordered.forEach(cat=>{
     const b=document.createElement("button");
     b.className="category-tab"+(activeCategory===cat&&!favoritesOnly?" active":"");
-    b.textContent=cat;b.dataset.category=cat;
+    b.textContent=cat;
+    b.dataset.category=cat;
     b.addEventListener("click",()=>{
       if(suppressCategoryClick){suppressCategoryClick=false;return}
-      activeCategory=cat;favoritesOnly=false;renderCategories();renderNotes();
+      activeCategory=cat;
+      favoritesOnly=false;
+      renderCategories();
+      renderNotes();
     });
     if(cat!=="All Notes")attachCategoryDrag(b,"tabs");
     row.appendChild(b);
   });
   const add=document.createElement("button");
-  add.className="add-category";add.textContent="⊞+";add.title="Add category";
+  add.className="add-category";
+  add.textContent="⊞+";
+  add.title="Add category";
   add.setAttribute("aria-label","Add category");
-  add.addEventListener("click",addCategoryDialog);row.appendChild(add);
+  add.addEventListener("click",addCategoryDialog);
+  row.appendChild(add);
   renderDrawerCategories();
 }
 function renderDrawerCategories(){
-  const holder=$("drawerCategories");holder.innerHTML="";
+  const holder=$("drawerCategories");
+  holder.innerHTML="";
   const ordered=["All Notes",...categories.filter(c=>c!=="All Notes")];
   ordered.forEach(cat=>{
     const b=document.createElement("button");
     b.className="drawer-category"+(activeCategory===cat&&!favoritesOnly?" active":"");
     b.dataset.category=cat;
     const handle=document.createElement("span");
-    handle.className="cat-drag-handle";handle.textContent=cat==="All Notes"?"":"⠿";
+    handle.className="cat-drag-handle";
+    handle.textContent=cat==="All Notes"?"":"⠿";
     handle.setAttribute("aria-label",cat==="All Notes"?"":"Drag to reorder category");
     if(cat==="All Notes")handle.style.display="none";
     const icon=document.createElement("span");
-    icon.className="cat-icon";icon.textContent=cat==="All Notes"?"▦":"▤";
+    icon.className="cat-icon";
+    icon.textContent=cat==="All Notes"?"▦":"▤";
     const name=document.createElement("span");
-    name.className="cat-name";name.textContent=cat;
+    name.className="cat-name";
+    name.textContent=cat;
     const count=document.createElement("span");
     count.className="cat-count";
     count.textContent=cat==="All Notes"?notes.length:notes.filter(n=>n.category===cat).length;
     b.append(handle,icon,name,count);
     b.addEventListener("click",()=>{
       if(suppressCategoryClick){suppressCategoryClick=false;return}
-      activeCategory=cat;favoritesOnly=false;$("searchInput").value="";
-      renderCategories();renderNotes();closeDrawer();
+      activeCategory=cat;
+      favoritesOnly=false;
+      $("searchInput").value="";
+      renderCategories();
+      renderNotes();
+      closeDrawer();
     });
     if(cat!=="All Notes")attachCategoryDrag(b,"drawer");
     holder.appendChild(b);
@@ -655,7 +630,8 @@ function attachCategoryDrag(button,surface){
     if(!dragInfo.moved){
       if(Math.abs(primary)<8)return;
       if(Math.abs(primary)<Math.abs(secondary))return;
-      dragInfo.moved=true;button.classList.add("dragging");
+      dragInfo.moved=true;
+      button.classList.add("dragging");
     }
     if(e.cancelable)e.preventDefault();
     const underPointer=document.elementFromPoint(e.clientX,e.clientY);
@@ -665,8 +641,11 @@ function attachCategoryDrag(button,surface){
     target.classList.add("drag-target");
     const rect=target.getBoundingClientRect();
     const before=axis==="x"?e.clientX<rect.left+rect.width/2:e.clientY<rect.top+rect.height/2;
-    if(before){if(button.nextElementSibling!==target)container.insertBefore(button,target)}
-    else if(target.nextElementSibling!==button)container.insertBefore(button,target.nextElementSibling);
+    if(before){
+      if(button.nextElementSibling!==target)container.insertBefore(button,target);
+    }else if(target.nextElementSibling!==button){
+      container.insertBefore(button,target.nextElementSibling);
+    }
   });
   const finish=e=>{
     if(!dragInfo||dragInfo.button!==button||dragInfo.pointerId!==e.pointerId)return;
@@ -677,7 +656,10 @@ function attachCategoryDrag(button,surface){
       const reordered=[...container.querySelectorAll(selector)].map(el=>el.dataset.category).filter(cat=>cat&&cat!=="All Notes");
       const remaining=categories.filter(cat=>cat!=="All Notes"&&!reordered.includes(cat));
       categories=["All Notes",...reordered,...remaining];
-      persist();suppressCategoryClick=true;renderCategories();renderNotes();
+      persist();
+      suppressCategoryClick=true;
+      renderCategories();
+      renderNotes();
       showToast("Category order saved");
       setTimeout(()=>{suppressCategoryClick=false},350);
     }
@@ -690,8 +672,10 @@ function attachCategoryDrag(button,surface){
   });
 }
 
+/* NOTES LIST */
 function renderNotes(){
-  const grid=$("notesGrid");grid.innerHTML="";
+  const grid=$("notesGrid");
+  grid.innerHTML="";
   const search=$("searchInput").value.trim();
   const terms=search.toLowerCase().split(/\s+/).filter(Boolean);
   const list=notes.filter(n=>!favoritesOnly||n.favorite)
@@ -704,6 +688,7 @@ function renderNotes(){
     .sort((a,b)=>(Number(!!b.pinned)-Number(!!a.pinned))||((b.updated||0)-(a.updated||0)));
 
   $("notesCount").textContent=(favoritesOnly?"Favorite notes":activeCategory==="All Notes"?"Your notes":activeCategory)+" · "+list.length;
+
   list.forEach(n=>{
     const card=document.createElement("article");
     card.className="note-card"+(n.pinned?" pinned":"");
@@ -711,54 +696,96 @@ function renderNotes(){
     title.className="note-card-title";
     const titleText=n.title||"Untitled note";
     title.innerHTML=search?highlightSearchTerms(titleText,search):esc(titleText);
+
     const preview=document.createElement("div");
     preview.className="note-card-preview";
     const previewText=plainText(n.content)||"No content yet";
     preview.innerHTML=search?highlightSearchTerms(previewText,search):esc(previewText);
-    const meta=document.createElement("div");meta.className="note-card-meta";
-    const cat=document.createElement("span");cat.textContent=n.category||"Personal";
-    const date=document.createElement("span");date.textContent="· "+new Date(n.updated||Date.now()).toLocaleDateString();
-    meta.append(cat,date);card.append(title,preview,meta);
+
+    const meta=document.createElement("div");
+    meta.className="note-card-meta";
+    const cat=document.createElement("span");
+    cat.textContent=n.category||"Personal";
+    const date=document.createElement("span");
+    date.textContent="· "+new Date(n.updated||Date.now()).toLocaleDateString();
+    meta.append(cat,date);
+    card.append(title,preview,meta);
+
     const pin=document.createElement("button");
-    pin.type="button";pin.className="note-pin"+(n.pinned?" is-pinned":"");
+    pin.type="button";
+    pin.className="note-pin"+(n.pinned?" is-pinned":"");
     pin.textContent=n.pinned?"📌":"♧";
     pin.title=n.pinned?"Unpin note":"Pin to top";
     pin.setAttribute("aria-label",n.pinned?"Unpin note":"Pin note to top");
     pin.setAttribute("aria-pressed",String(!!n.pinned));
-    pin.addEventListener("click",e=>{e.stopPropagation();togglePin(n.id)});
+    pin.addEventListener("click",e=>{
+      e.stopPropagation();
+      togglePin(n.id);
+    });
     card.appendChild(pin);
+
     if(n.favorite){
-      const star=document.createElement("span");star.className="note-fav";star.textContent="★";card.appendChild(star);
+      const star=document.createElement("span");
+      star.className="note-fav";
+      star.textContent="★";
+      card.appendChild(star);
     }
     card.addEventListener("click",()=>openNote(n.id));
     grid.appendChild(card);
   });
   $("emptyState").classList.toggle("hidden",list.length!==0);
 }
-  function openNote(id){
-  currentNoteId=id;const n=currentNote();if(!n)return;
-  clearReadMarker();noteTitle.value=n.title||"";noteBody.innerHTML=n.content||"";
+
+function openNote(id){
+  currentNoteId=id;
+  const n=currentNote();
+  if(!n)return;
+  clearReadMarker();
+  noteTitle.value=n.title||"";
+  noteBody.innerHTML=n.content||"";
   noteBody.dataset.fontSize=String(n.fontSize||17);
-  noteBody.style.fontSize=(n.fontSize||17)+"px";noteBody.style.color=n.color||"#111827";
+  noteBody.style.fontSize=(n.fontSize||17)+"px";
+  noteBody.style.color=n.color||"#111827";
   noteBody.style.paddingBottom="120px";
-  home.classList.add("hidden");editor.classList.remove("hidden");menu.classList.add("hidden");
-  closePalette();setMode(false);updatePinMenu();noteBody.scrollTop=0;
-  clearTimeout(saveStatusTimer);setSaveStatus("saved");
+  home.classList.add("hidden");
+  editor.classList.remove("hidden");
+  menu.classList.add("hidden");
+  closePalette();
+  setMode(false);
+  updatePinMenu();
+  noteBody.scrollTop=0;
+  clearTimeout(saveStatusTimer);
+  setSaveStatus("saved");
 }
 function newNote(){
   const cat=activeCategory!=="All Notes"&&categories.includes(activeCategory)?activeCategory:(categories.find(c=>c!=="All Notes")||"Personal");
   const n={id:makeId(),title:"",content:"",category:cat,favorite:false,pinned:false,fontSize:17,color:"#111827",updated:Date.now()};
-  notes.unshift(n);persist();openNote(n.id);setMode(true);setTimeout(()=>noteTitle.focus(),100);
+  notes.unshift(n);
+  persist();
+  openNote(n.id);
+  setMode(true);
+  setTimeout(()=>noteTitle.focus(),100);
 }
 function closeEditor(){
-  clearReadMarker();saveCurrentNote();closePalette();editor.classList.add("hidden");
-  toolbar.classList.add("hidden");menu.classList.add("hidden");home.classList.remove("hidden");
+  clearReadMarker();
+  saveCurrentNote();
+  closePalette();
+  editor.classList.add("hidden");
+  toolbar.classList.add("hidden");
+  menu.classList.add("hidden");
+  home.classList.remove("hidden");
   noteBody.style.paddingBottom="120px";
-  currentNoteId=null;renderCategories();renderNotes();
+  currentNoteId=null;
+  renderCategories();
+  renderNotes();
 }
 function setMode(edit){
-  clearReadMarker();isEditMode=!!edit;
-  if(!isEditMode){saveCurrentNote();closePalette()}
+  clearReadMarker();
+  isEditMode=!!edit;
+  if(!isEditMode){
+    saveCurrentNote();
+    closePalette();
+  }
   noteTitle.readOnly=!isEditMode;
   noteBody.contentEditable=isEditMode?"true":"false";
   $("modeLabel").textContent=isEditMode?"EDIT":"READ";
@@ -773,6 +800,8 @@ function setMode(edit){
     noteBody.style.paddingBottom="120px";
   }
 }
+
+/* READ MODE WORD MARKER */
 function clearReadMarker(){
   noteBody.querySelectorAll(".read-word-marker").forEach(old=>old.replaceWith(...old.childNodes));
   markerSpan=null;
@@ -781,7 +810,12 @@ function getRangeAtPoint(e){
   if(document.caretRangeFromPoint)return document.caretRangeFromPoint(e.clientX,e.clientY);
   if(document.caretPositionFromPoint){
     const p=document.caretPositionFromPoint(e.clientX,e.clientY);
-    if(p){const r=document.createRange();r.setStart(p.offsetNode,p.offset);r.collapse(true);return r}
+    if(p){
+      const r=document.createRange();
+      r.setStart(p.offsetNode,p.offset);
+      r.collapse(true);
+      return r;
+    }
   }
   return null;
 }
@@ -800,15 +834,21 @@ function markWordAtPoint(e){
   while(end<text.length&&isWordChar(text[end]))end++;
   clearReadMarker();
   try{
-    const wr=document.createRange();wr.setStart(node,start);wr.setEnd(node,end);
-    const span=document.createElement("span");span.className="read-word-marker";
-    wr.surroundContents(span);markerSpan=span;
+    const wr=document.createRange();
+    wr.setStart(node,start);
+    wr.setEnd(node,end);
+    const span=document.createElement("span");
+    span.className="read-word-marker";
+    wr.surroundContents(span);
+    markerSpan=span;
   }catch(err){}
 }
 noteBody.addEventListener("click",markWordAtPoint);
 
+/* TEXT SELECTION AND EDITING */
 function saveSelection(){
-  const s=window.getSelection();if(!s||!s.rangeCount)return;
+  const s=window.getSelection();
+  if(!s||!s.rangeCount)return;
   const r=s.getRangeAt(0);
   if(noteBody.contains(r.commonAncestorContainer))savedSelection=r.cloneRange();
 }
@@ -816,7 +856,9 @@ function restoreSelection(){
   if(!savedSelection)return;
   try{
     noteBody.focus({preventScroll:true});
-    const s=window.getSelection();s.removeAllRanges();s.addRange(savedSelection);
+    const s=window.getSelection();
+    s.removeAllRanges();
+    s.addRange(savedSelection);
   }catch(e){}
 }
 function applyCommand(command,value=null){
@@ -826,7 +868,8 @@ function applyCommand(command,value=null){
     noteBody.focus({preventScroll:true});
     document.execCommand(command,false,value);
   }catch(e){}
-  saveCurrentNote();saveSelection();
+  saveCurrentNote();
+  saveSelection();
 }
 function applyHistoryCommand(command){
   if(!isEditMode||!currentNote())return;
@@ -836,17 +879,23 @@ function applyHistoryCommand(command){
     noteBody.focus({preventScroll:true});
     document.execCommand(command,false,null);
   }catch(e){}
-  saveSelection();saveCurrentNote();
+  saveSelection();
+  saveCurrentNote();
   requestAnimationFrame(()=>{noteBody.scrollTop=previousScrollTop});
 }
 function openPalette(type){
   if(!isEditMode)setMode(true);
-  saveSelection();paletteType=type;
+  saveSelection();
+  paletteType=type;
   $("paletteTitle").textContent=type==="highlight"?"Choose highlight color":"Choose font color";
-  const holder=$("paletteColors");holder.innerHTML="";
+  const holder=$("paletteColors");
+  holder.innerHTML="";
   COLORS.forEach(color=>{
-    const b=document.createElement("button");b.className="color-swatch";
-    b.style.background=color.value;b.title=color.name;b.setAttribute("aria-label",color.name);
+    const b=document.createElement("button");
+    b.className="color-swatch";
+    b.style.background=color.value;
+    b.title=color.name;
+    b.setAttribute("aria-label",color.name);
     b.addEventListener("mousedown",e=>e.preventDefault());
     b.addEventListener("click",()=>{
       restoreSelection();
@@ -858,80 +907,147 @@ function openPalette(type){
         try{document.execCommand("foreColor",false,color.value)}catch(e){}
         $("btnTextColor").style.color=color.value;
       }
-      saveCurrentNote();saveSelection();closePalette();
+      saveCurrentNote();
+      saveSelection();
+      closePalette();
     });
     holder.appendChild(b);
   });
-  palette.classList.remove("hidden");updateToolbarPosition();
+  palette.classList.remove("hidden");
+  updateToolbarPosition();
 }
 function closePalette(){palette.classList.add("hidden")}
 function changeFontSize(delta){
-  const n=currentNote();if(!n)return;
+  const n=currentNote();
+  if(!n)return;
   let size=parseInt(noteBody.dataset.fontSize||n.fontSize||17,10);
   size=Math.max(12,Math.min(36,size+delta));
-  noteBody.dataset.fontSize=String(size);noteBody.style.fontSize=size+"px";
-  n.fontSize=size;saveCurrentNote();
+  noteBody.dataset.fontSize=String(size);
+  noteBody.style.fontSize=size+"px";
+  n.fontSize=size;
+  saveCurrentNote();
 }
 function copyCurrentNote(){
-  const n=currentNote();if(!n)return;
+  const n=currentNote();
+  if(!n)return;
   const text=(noteTitle.value.trim()?noteTitle.value.trim()+"\n\n":"")+plainText(noteBody.innerHTML);
-  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(text).then(()=>showToast("Note copied"),()=>fallbackCopy(text));
-  else fallbackCopy(text);
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(text).then(()=>showToast("Note copied"),()=>fallbackCopy(text));
+  }else fallbackCopy(text);
 }
 function fallbackCopy(text){
-  const area=document.createElement("textarea");area.value=text;
-  area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();
-  try{document.execCommand("copy");showToast("Note copied")}catch(e){showToast("Copy not available")}
+  const area=document.createElement("textarea");
+  area.value=text;
+  area.style.position="fixed";
+  area.style.opacity="0";
+  document.body.appendChild(area);
+  area.select();
+  try{
+    document.execCommand("copy");
+    showToast("Note copied");
+  }catch(e){showToast("Copy not available")}
   area.remove();
 }
+
+/* DIALOGS AND CATEGORY MANAGEMENT */
 function openDialog(title,content,action,label="Save",danger=false){
-  $("dialogTitle").textContent=title;$("dialogContent").innerHTML=content;
-  $("dialogConfirm").textContent=label;$("dialogConfirm").classList.toggle("danger",danger);
-  $("dialogBackdrop").classList.remove("hidden");dialogAction=action;
+  $("dialogTitle").textContent=title;
+  $("dialogContent").innerHTML=content;
+  $("dialogConfirm").textContent=label;
+  $("dialogConfirm").classList.toggle("danger",danger);
+  $("dialogBackdrop").classList.remove("hidden");
+  dialogAction=action;
 }
-function closeDialog(){$("dialogBackdrop").classList.add("hidden");$("dialogContent").innerHTML="";dialogAction=null}
+function closeDialog(){
+  $("dialogBackdrop").classList.add("hidden");
+  $("dialogContent").innerHTML="";
+  dialogAction=null;
+}
 function addCategoryDialog(){
   openDialog("Add Category",'<input id="dialogCategoryName" maxlength="35" placeholder="Category name" autocomplete="off">',()=>{
     const name=$("dialogCategoryName").value.trim();
     if(!name){showToast("Enter a category name");return false}
-    if(categories.some(c=>c.toLowerCase()===name.toLowerCase())){showToast("Category already exists");return false}
-    categories.push(name);activeCategory=name;favoritesOnly=false;persist();renderCategories();renderNotes();return true;
+    if(categories.some(c=>c.toLowerCase()===name.toLowerCase())){
+      showToast("Category already exists");
+      return false;
+    }
+    categories.push(name);
+    activeCategory=name;
+    favoritesOnly=false;
+    persist();
+    renderCategories();
+    renderNotes();
+    return true;
   });
   setTimeout(()=>$("dialogCategoryName")?.focus(),50);
 }
 function moveCategoryDialog(){
-  const n=currentNote();if(!n)return;
+  const n=currentNote();
+  if(!n)return;
   const options=categories.filter(c=>c!=="All Notes").map(c=>`<option value="${esc(c)}" ${c===n.category?"selected":""}>${esc(c)}</option>`).join("");
   openDialog("Move to Category",`<select id="dialogMoveCategory">${options}</select>`,()=>{
-    const cat=$("dialogMoveCategory").value;if(!cat)return false;
-    n.category=cat;n.updated=Date.now();persist();renderCategories();renderNotes();showToast("Moved to "+cat);return true;
+    const cat=$("dialogMoveCategory").value;
+    if(!cat)return false;
+    n.category=cat;
+    n.updated=Date.now();
+    persist();
+    renderCategories();
+    renderNotes();
+    showToast("Moved to "+cat);
+    return true;
   });
 }
 function deleteCurrentNote(){
-  const n=currentNote();if(!n)return;
+  const n=currentNote();
+  if(!n)return;
   openDialog("Delete Note",`<p style="line-height:1.5;color:#4b5563">Delete “${esc(n.title||"Untitled note")}”? This cannot be undone.</p>`,()=>{
-    notes=notes.filter(x=>x.id!==currentNoteId);persist();closeDialog();closeEditor();showToast("Note deleted");return false;
+    notes=notes.filter(x=>x.id!==currentNoteId);
+    persist();
+    closeDialog();
+    closeEditor();
+    showToast("Note deleted");
+    return false;
   },"Delete",true);
 }
 function toggleFavorite(){
-  const n=currentNote();if(!n)return;
-  n.favorite=!n.favorite;n.updated=Date.now();persist();
+  const n=currentNote();
+  if(!n)return;
+  n.favorite=!n.favorite;
+  n.updated=Date.now();
+  persist();
   $("menuFavorite").textContent=n.favorite?"★ Remove Favorite":"☆ Favorite";
-  renderNotes();menu.classList.add("hidden");showToast(n.favorite?"Added to favorites":"Removed from favorites");
+  renderNotes();
+  menu.classList.add("hidden");
+  showToast(n.favorite?"Added to favorites":"Removed from favorites");
 }
-function showFavorites(){activeCategory="All Notes";favoritesOnly=true;renderCategories();renderNotes();closeDrawer()}
+function showFavorites(){
+  activeCategory="All Notes";
+  favoritesOnly=true;
+  renderCategories();
+  renderNotes();
+  closeDrawer();
+}
 function openDrawer(){$("drawerBackdrop").classList.remove("hidden")}
 function closeDrawer(){$("drawerBackdrop").classList.add("hidden")}
 function exportNotes(){
   const blob=new Blob([JSON.stringify({categories,notes},null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="preach-mate-backup.json";document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);closeDrawer();showToast("Backup exported");
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="preach-mate-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  closeDrawer();
+  showToast("Backup exported");
 }
 
+/* TOOLBAR POSITION */
 function updateToolbarPosition(){
   if(!isEditMode||editor.classList.contains("hidden")){
-    toolbar.classList.add("hidden");return;
+    toolbar.classList.add("hidden");
+    return;
   }
   toolbar.classList.remove("hidden");
   let bottom=0;
@@ -944,10 +1060,8 @@ function updateToolbarPosition(){
 }
 
 /* AUTO-SCROLL FIX */
-let typingScrollFrame=0;
-let typingScrollFrame2=0;
-let pasteScrollPending=false;
-let pasteScrollToken=0;
+let typingScrollFrame=0,typingScrollFrame2=0;
+let pasteScrollPending=false,pasteScrollToken=0;
 
 function updateNoteBottomSpace(){
   if(!noteBody||!toolbar)return;
@@ -970,8 +1084,7 @@ function getTypingCaretRect(){
   const selection=window.getSelection();
   if(!selection||!selection.rangeCount)return null;
   const range=selection.getRangeAt(0);
-  if(!range.collapsed)return null;
-  if(!noteBody.contains(range.startContainer))return null;
+  if(!range.collapsed||!noteBody.contains(range.startContainer))return null;
   const caretRect=range.getBoundingClientRect();
   if(caretRect.height>0)return caretRect;
   const node=range.startContainer;
@@ -979,7 +1092,8 @@ function getTypingCaretRect(){
     const length=node.textContent.length;
     const offset=Math.max(0,Math.min(range.startOffset,length-1));
     const probe=document.createRange();
-    probe.setStart(node,offset);probe.setEnd(node,Math.min(offset+1,length));
+    probe.setStart(node,offset);
+    probe.setEnd(node,Math.min(offset+1,length));
     const rects=probe.getClientRects();
     if(rects.length){
       const r=rects[rects.length-1];
@@ -992,8 +1106,12 @@ function getTypingCaretRect(){
       const probe=document.createRange();
       try{
         if(previous.nodeType===Node.TEXT_NODE&&previous.length){
-          probe.setStart(previous,previous.length-1);probe.setEnd(previous,previous.length);
-        }else{probe.selectNodeContents(previous);probe.collapse(false)}
+          probe.setStart(previous,previous.length-1);
+          probe.setEnd(previous,previous.length);
+        }else{
+          probe.selectNodeContents(previous);
+          probe.collapse(false);
+        }
         const r=probe.getBoundingClientRect();
         if(r.height>0)return r;
       }catch(e){}
@@ -1005,7 +1123,10 @@ function keepTypingLineVisible(){
   if(pasteScrollPending||!isEditMode||editor.classList.contains("hidden")||document.activeElement!==noteBody)return;
   const caret=getTypingCaretRect(),area=getVisibleTypingArea();
   if(!caret||!area)return;
-  if(caret.bottom>area.visibleBottom-2){noteBody.scrollTop+=caret.bottom-(area.visibleBottom-2);return}
+  if(caret.bottom>area.visibleBottom-2){
+    noteBody.scrollTop+=caret.bottom-(area.visibleBottom-2);
+    return;
+  }
   if(caret.top<area.visibleTop)noteBody.scrollTop-=area.visibleTop-caret.top;
 }
 function scheduleTypingScroll(){
@@ -1015,7 +1136,8 @@ function scheduleTypingScroll(){
   typingScrollFrame=requestAnimationFrame(()=>{
     typingScrollFrame=0;
     typingScrollFrame2=requestAnimationFrame(()=>{
-      typingScrollFrame2=0;keepTypingLineVisible();
+      typingScrollFrame2=0;
+      keepTypingLineVisible();
     });
   });
 }
@@ -1032,22 +1154,25 @@ function schedulePasteTailScroll(){
   const token=++pasteScrollToken;
   setTimeout(()=>{
     if(token!==pasteScrollToken)return;
-    updateToolbarPosition();updateNoteBottomSpace();
+    updateToolbarPosition();
+    updateNoteBottomSpace();
     let attempts=0;
     function positionPastedTail(){
       if(token!==pasteScrollToken)return;
-      updateToolbarPosition();updateNoteBottomSpace();
+      updateToolbarPosition();
+      updateNoteBottomSpace();
       const positioned=keepPastedTailAtTarget();
       if(positioned||attempts>=8){
-        pasteScrollPending=false;scheduleTypingScroll();return;
+        pasteScrollPending=false;
+        scheduleTypingScroll();
+        return;
       }
-      attempts++;requestAnimationFrame(positionPastedTail);
+      attempts++;
+      requestAnimationFrame(positionPastedTail);
     }
     requestAnimationFrame(()=>requestAnimationFrame(positionPastedTail));
   },0);
 }
-
-/* Each listener is registered only once. */
 noteBody.addEventListener("paste",schedulePasteTailScroll);
 noteBody.addEventListener("input",scheduleTypingScroll);
 noteBody.addEventListener("keyup",scheduleTypingScroll);
@@ -1056,10 +1181,13 @@ noteBody.addEventListener("focus",scheduleTypingScroll);
 
 if(vv){
   vv.addEventListener("resize",()=>{
-    updateToolbarPosition();updateNoteBottomSpace();scheduleTypingScroll();
+    updateToolbarPosition();
+    updateNoteBottomSpace();
+    scheduleTypingScroll();
   });
   vv.addEventListener("scroll",()=>{
-    updateToolbarPosition();updateNoteBottomSpace();
+    updateToolbarPosition();
+    updateNoteBottomSpace();
   });
 }
 
@@ -1085,11 +1213,13 @@ noteBody.addEventListener("mouseup",saveSelection);
 noteBody.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 noteTitle.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 
+/* MAIN BUTTONS AND MENUS */
 $("btnNewNote").addEventListener("click",newNote);
 $("btnBack").addEventListener("click",closeEditor);
 $("btnCopy").addEventListener("click",copyCurrentNote);
 $("btnMenu").addEventListener("click",e=>{
-  e.stopPropagation();const n=currentNote();
+  e.stopPropagation();
+  const n=currentNote();
   if(n){
     $("menuFavorite").textContent=n.favorite?"★ Remove Favorite":"☆ Favorite";
     updatePinMenu();
@@ -1101,25 +1231,48 @@ document.addEventListener("click",e=>{
   if(!menu.contains(e.target)&&!e.target.closest("#btnMenu"))menu.classList.add("hidden");
 });
 $("menuMode").addEventListener("click",()=>setMode(!isEditMode));
-$("menuMove").addEventListener("click",()=>{menu.classList.add("hidden");moveCategoryDialog()});
-$("menuPin").addEventListener("click",()=>{const n=currentNote();if(n){togglePin(n.id);menu.classList.add("hidden")}});
+$("menuMove").addEventListener("click",()=>{
+  menu.classList.add("hidden");
+  moveCategoryDialog();
+});
+$("menuPin").addEventListener("click",()=>{
+  const n=currentNote();
+  if(n){
+    togglePin(n.id);
+    menu.classList.add("hidden");
+  }
+});
 $("menuFavorite").addEventListener("click",toggleFavorite);
 $("menuDelete").addEventListener("click",deleteCurrentNote);
 
 $("btnDrawer").addEventListener("click",openDrawer);
-$("drawerBackdrop").addEventListener("click",e=>{if(e.target===$("drawerBackdrop"))closeDrawer()});
+$("drawerBackdrop").addEventListener("click",e=>{
+  if(e.target===$("drawerBackdrop"))closeDrawer();
+});
 $("drawerHome").addEventListener("click",()=>{
-  activeCategory="All Notes";favoritesOnly=false;$("searchInput").value="";
-  renderCategories();renderNotes();closeDrawer();
+  activeCategory="All Notes";
+  favoritesOnly=false;
+  $("searchInput").value="";
+  renderCategories();
+  renderNotes();
+  closeDrawer();
 });
 $("drawerFavorites").addEventListener("click",showFavorites);
-$("drawerNewCategory").addEventListener("click",()=>{closeDrawer();addCategoryDialog()});
-$("drawerNewNote").addEventListener("click",()=>{closeDrawer();newNote()});
+$("drawerNewCategory").addEventListener("click",()=>{
+  closeDrawer();
+  addCategoryDialog();
+});
+$("drawerNewNote").addEventListener("click",()=>{
+  closeDrawer();
+  newNote();
+});
 $("drawerExport").addEventListener("click",exportNotes);
 $("btnFavorites").addEventListener("click",showFavorites);
 $("searchInput").addEventListener("input",renderNotes);
 $("dialogCancel").addEventListener("click",closeDialog);
-$("dialogBackdrop").addEventListener("click",e=>{if(e.target===$("dialogBackdrop"))closeDialog()});
+$("dialogBackdrop").addEventListener("click",e=>{
+  if(e.target===$("dialogBackdrop"))closeDialog();
+});
 $("dialogConfirm").addEventListener("click",()=>{
   if(typeof dialogAction==="function"){
     const result=dialogAction();
@@ -1134,15 +1287,14 @@ document.addEventListener("keydown",e=>{
     else if(!editor.classList.contains("hidden"))closeEditor();
   }
   if(e.key==="Enter"&&e.target.id==="dialogCategoryName"){
-    e.preventDefault();$("dialogConfirm").click();
+    e.preventDefault();
+    $("dialogConfirm").click();
   }
 });
 
-/* PHONE BACK BUTTON / ANDROID BACK GESTURE */
-let lastHomeBackTime=0;
-let backExitTimer=null;
-let allowNativeBack=false;
-let backActionInProgress=false;
+/* ANDROID BACK BUTTON */
+let lastHomeBackTime=0,backExitTimer=null;
+let allowNativeBack=false,backActionInProgress=false;
 
 function addBackGuard(){
   try{history.pushState({preachMateGuard:true},"",location.href)}catch(e){}
@@ -1153,13 +1305,18 @@ function handleAppBack(){
   if(palette&&!palette.classList.contains("hidden")){closePalette();return}
   if(!menu.classList.contains("hidden")){menu.classList.add("hidden");return}
   if(!editor.classList.contains("hidden")){
-    saveCurrentNote();closeEditor();
-    lastHomeBackTime=0;clearTimeout(backExitTimer);return;
+    saveCurrentNote();
+    closeEditor();
+    lastHomeBackTime=0;
+    clearTimeout(backExitTimer);
+    return;
   }
   const now=Date.now();
   if(lastHomeBackTime!==0&&now-lastHomeBackTime<=2000){
-    lastHomeBackTime=0;clearTimeout(backExitTimer);
-    allowNativeBack=true;backActionInProgress=true;
+    lastHomeBackTime=0;
+    clearTimeout(backExitTimer);
+    allowNativeBack=true;
+    backActionInProgress=true;
     setTimeout(()=>{backActionInProgress=false},300);
     return;
   }
@@ -1179,7 +1336,9 @@ window.addEventListener("popstate",()=>{
   if(!allowNativeBack)setTimeout(()=>{if(!allowNativeBack)addBackGuard()},0);
 });
 window.addEventListener("resize",()=>{
-  updateToolbarPosition();updateNoteBottomSpace();scheduleTypingScroll();
+  updateToolbarPosition();
+  updateNoteBottomSpace();
+  scheduleTypingScroll();
 });
 window.addEventListener("pagehide",()=>{
   if(currentNoteId)saveCurrentNote();
@@ -1188,9 +1347,11 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="hidden"&&currentNoteId)saveCurrentNote();
 });
 
+/* STARTUP */
 persist();
 renderCategories();
 renderNotes();
+applySavedLogo();
 
 })();
 </script>
