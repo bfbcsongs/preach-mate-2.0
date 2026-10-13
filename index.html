@@ -189,34 +189,24 @@ input,button,select,textarea{font-size:16px}
 </head>
 <body>
 <div id="app">
-  <header class="topbar">
-    <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
-    
-<div class="brand-wrap">
-  <div>
-    <div class="brand">POTTER'S HOUSE</div>
-    <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">
-      ILAGAN
-    </small>
+<header class="topbar">
+  <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
+
+  <div class="brand-wrap">
+    <div>
+      <div class="brand">POTTER'S HOUSE</div>
+      <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">
+        ILAGAN
+      </small>
+    </div>
+
+    <img id="topbarLogo"
+         class="brand-logo hidden"
+         alt="Preach Mate logo">
   </div>
 
-  <img id="topbarLogo"
-       class="brand-logo hidden"
-       alt="Preach Mate logo">
-</div>
-
-  <img id="topbarLogo"
-       class="brand-logo hidden"
-       alt="Preach Mate logo"
-       title="Upload or change logo">
-</div>
-  <img id="topbarLogo"
-       class="brand-logo hidden"
-       alt="Preach Mate logo"
-       title="Upload or change logo">
-</div>
-    <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
-  </header>
+  <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
+</header>
   <div class="searchbar"><input id="searchInput" type="search" placeholder="Search notes..." autocomplete="off" aria-label="Search notes"></div>
   <nav class="category-row" id="categoryTabs" aria-label="Categories"></nav>
   <main class="home-content">
@@ -1226,8 +1216,7 @@ renderNotes();
 applySavedLogo();
 
 })();
-
-})();
+ }
 </script>
 </body>
 </html>
