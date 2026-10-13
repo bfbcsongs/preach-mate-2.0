@@ -193,13 +193,17 @@ input,button,select,textarea{font-size:16px}
     <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
     
 <div class="brand-wrap">
-  <div class="brand-wrap">
   <div>
     <div class="brand">POTTER'S HOUSE</div>
     <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">
-  ILAGAN
-</small>
+      ILAGAN
+    </small>
   </div>
+
+  <img id="topbarLogo"
+       class="brand-logo hidden"
+       alt="Preach Mate logo">
+</div>
 
   <img id="topbarLogo"
        class="brand-logo hidden"
@@ -236,7 +240,6 @@ input,button,select,textarea{font-size:16px}
        alt="Preach Mate logo"
        title="Upload or change logo">
 </div>
-<button class="drawer-item" id="drawerLogoUpload">▧ &nbsp; Upload / Change Logo</button>
     <button class="drawer-item" id="drawerHome">⌂ &nbsp; All Notes</button>
     <button class="drawer-item" id="drawerFavorites">☆ &nbsp; Favorites</button>
     <button class="drawer-item" id="drawerNewCategory">⊞ &nbsp; Add Category</button>
@@ -1220,6 +1223,9 @@ document.addEventListener("visibilitychange",()=>{
 persist();
 renderCategories();
 renderNotes();
+applySavedLogo();
+
+})();
 
 })();
 </script>
