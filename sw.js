@@ -1,16 +1,15 @@
 
 "use strict";
 
-const CACHE_NAME = "preach-mate-cache-v1";
+const CACHE_NAME = "preach-mate-cache-v2";
 
 const APP_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon.svg"
+  "./icon-192.png"
 ];
 
-// Install: i-cache ang pangunahing files ng app.
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,7 +18,6 @@ self.addEventListener("install", event => {
   );
 });
 
-// Activate: alisin ang lumang Preach Mate caches.
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
@@ -35,8 +33,6 @@ self.addEventListener("activate", event => {
   );
 });
 
-// Fetch: network-first para sa page navigation,
-// cache-first para sa ibang app files.
 self.addEventListener("fetch", event => {
   const request = event.request;
 
@@ -44,7 +40,6 @@ self.addEventListener("fetch", event => {
 
   const url = new URL(request.url);
 
-  // Huwag pakialaman ang ibang websites o origins.
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
@@ -57,24 +52,28 @@ self.addEventListener("fetch", event => {
             caches.open(CACHE_NAME)
               .then(cache => cache.put("./index.html", copy))
               .catch(() => {});
-
           }
+
           return response;
         })
         .catch(async () => {
-          const cachedPage = await caches.match("./index.html");
+          const cachedPage =
+            await caches.match("./index.html");
 
           if (cachedPage) return cachedPage;
 
-          const cachedRoot = await caches.match("./");
+          const cachedRoot =
+            await caches.match("./");
+
           if (cachedRoot) return cachedRoot;
 
           return new Response(
-            "Preach Mate is offline. Please open the app online once before using it offline.",
+            "Preach Mate is offline. Open the app online once before using it offline.",
             {
               status: 503,
               headers: {
-                "Content-Type": "text/plain; charset=utf-8"
+                "Content-Type":
+                  "text/plain; charset=utf-8"
               }
             }
           );
