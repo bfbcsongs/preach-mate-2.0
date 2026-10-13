@@ -654,5 +654,11 @@
   }
 
   // Read-only access for the next integration phase.
-  window.Pre achMateFirebase = undefined;
-})();
+  window.PreachMateFirebase = {
+  get auth() {
+    return auth;
+  },
+  get currentUser() {
+    return currentUser;
+  }
+};
