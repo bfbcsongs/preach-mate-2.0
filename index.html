@@ -6,6 +6,12 @@
 <meta name="theme-color" content="#111827">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+
 <title>Preach Mate</title>
 <style>
 :root{
@@ -1488,6 +1494,7 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="hidden"&&currentNoteId)saveCurrentNote();
 });
 
+
 /* STARTUP */
 persist();
 renderCategories();
@@ -1496,5 +1503,27 @@ applySavedLogo();
 
 })();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js", {
+      scope: "./"
+    }).then(registration => {
+      console.log(
+        "Preach Mate offline support enabled:",
+        registration.scope
+      );
+    }).catch(error => {
+      console.error(
+        "Preach Mate service worker registration failed:",
+        error
+      );
+    });
+  });
+}
+</script>
+
 </body>
 </html>
+
