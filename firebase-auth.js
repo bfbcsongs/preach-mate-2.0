@@ -1,7 +1,8 @@
 /* ==========================================
    PREACH MATE
    FIREBASE AUTHENTICATION
-   Email / Password / Email Verification
+   Google Sign-In / Email / Password
+   Email Verification / Password Reset
    ========================================== */
 
 (() => {
@@ -19,6 +20,7 @@
   let auth = null;
   let currentUser = null;
   let firebaseReady = false;
+  let googleSigningIn = false;
 
   const $ = id => document.getElementById(id);
 
@@ -50,10 +52,39 @@
         renderAccountPanel();
       });
 
+      /*
+       * Check the result after Google redirects back
+       * to the Preach Mate application.
+       */
+
+      auth.getRedirectResult()
+        .then(result => {
+          if (result && result.user) {
+            currentUser = result.user;
+
+            renderAccountPanel();
+
+            showToast(
+              "Welcome to Preach Mate!"
+            );
+          }
+        })
+        .catch(error => {
+          console.error(
+            "Google Sign-In redirect error:",
+            error
+          );
+
+          showToast(getFriendlyError(error));
+        });
+
       renderAccountPanel();
 
     } catch (error) {
-      console.error("Firebase initialization error:", error);
+      console.error(
+        "Firebase initialization error:",
+        error
+      );
 
       showToast("Hindi makakonekta sa Firebase.");
     }
@@ -67,6 +98,7 @@
     if ($("pmAuthStyles")) return;
 
     const style = document.createElement("style");
+
     style.id = "pmAuthStyles";
 
     style.textContent = `
@@ -123,12 +155,27 @@
         font-size: 14px;
         font-weight: 700;
         text-align: center;
+        cursor: pointer;
       }
 
       .pm-account-btn.primary {
         background: #2563eb;
         border-color: #2563eb;
         color: #fff;
+      }
+
+      .pm-account-btn.google {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #202124;
+      }
+
+      .pm-account-btn.google .pm-google-g {
+        display: inline-block;
+        margin-right: 9px;
+        font-size: 17px;
+        font-weight: 900;
+        color: #4285f4;
       }
 
       .pm-account-btn.danger {
@@ -193,6 +240,7 @@
         background: #fff;
         color: #111827;
         font-size: 16px;
+        box-sizing: border-box;
       }
 
       .pm-auth-dialog input:focus {
@@ -285,6 +333,52 @@
         text-align: left;
       }
 
+      .pm-auth-google {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 46px;
+        padding: 11px;
+        margin: 12px 0;
+        border: 1px solid #dadce0;
+        border-radius: 9px;
+        background: #fff;
+        color: #202124;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .pm-auth-google:disabled {
+        opacity: .6;
+        cursor: wait;
+      }
+
+      .pm-google-g {
+        font-size: 19px;
+        font-weight: 900;
+        color: #4285f4;
+      }
+
+      .pm-auth-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+        color: #9ca3af;
+        font-size: 12px;
+      }
+
+      .pm-auth-divider::before,
+      .pm-auth-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #e5e7eb;
+      }
+
       .pm-auth-toast {
         position: fixed;
         left: 50%;
@@ -317,9 +411,7 @@
 
     const drawer = document.querySelector(".drawer");
 
-    if (!drawer) {
-      return null;
-    }
+    if (!drawer) return null;
 
     panel = document.createElement("section");
     panel.id = "pmAccountPanel";
@@ -346,6 +438,7 @@
     panel.replaceChildren();
 
     const heading = document.createElement("div");
+
     heading.className = "pm-account-heading";
     heading.textContent = "☁️ Preach Mate Account";
 
@@ -357,13 +450,26 @@
         "Connecting to Firebase...",
         "pm-account-status"
       );
+
       return;
     }
 
     if (!currentUser) {
       addText(
         panel,
-        "Create an account or log in to prepare for cloud synchronization.",
+        "Sign in to your account to continue using Preach Mate.",
+        "pm-account-status"
+      );
+
+      addGoogleButton(
+        panel,
+        "Continue with Google",
+        signInWithGoogle
+      );
+
+      addText(
+        panel,
+        "Or use email and password",
         "pm-account-status"
       );
 
@@ -384,10 +490,21 @@
     }
 
     const email = document.createElement("div");
+
     email.className = "pm-account-email";
-    email.textContent = currentUser.email || "Account";
+    email.textContent =
+      currentUser.displayName
+        ? currentUser.displayName + "\n" +
+          (currentUser.email || "")
+        : currentUser.email || "Account";
 
     panel.appendChild(email);
+
+    const isGoogleUser =
+      currentUser.providerData &&
+      currentUser.providerData.some(
+        provider => provider.providerId === "google.com"
+      );
 
     if (currentUser.emailVerified) {
       addText(
@@ -395,7 +512,7 @@
         "✓ Email verified successfully.",
         "pm-account-status verified"
       );
-    } else {
+    } else if (!isGoogleUser) {
       addText(
         panel,
         "⚠ Email not verified yet. Open the verification link sent to your email.",
@@ -415,11 +532,13 @@
       );
     }
 
-    addButton(
-      panel,
-      "Reset Password",
-      sendPasswordReset
-    );
+    if (!isGoogleUser) {
+      addButton(
+        panel,
+        "Reset Password",
+        sendPasswordReset
+      );
+    }
 
     addButton(
       panel,
@@ -451,18 +570,78 @@
     const button = document.createElement("button");
 
     button.type = "button";
+
     button.className =
       "pm-account-btn" +
       (primary ? " primary" : "") +
       (danger ? " danger" : "");
 
     button.textContent = label;
+    button.addEventListener("click", action);
+
+    parent.appendChild(button);
+
+    return button;
+  }
+
+  function addGoogleButton(parent, label, action) {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "pm-account-btn google";
+
+    const icon = document.createElement("span");
+
+    icon.className = "pm-google-g";
+    icon.textContent = "G";
+
+    button.appendChild(icon);
+    button.appendChild(document.createTextNode(label));
 
     button.addEventListener("click", action);
 
     parent.appendChild(button);
 
     return button;
+  }
+
+  /* ==========================================
+     GOOGLE SIGN-IN
+     ========================================== */
+
+  async function signInWithGoogle() {
+    if (!auth || !firebaseReady) {
+      showToast("Hindi pa handa ang Firebase.");
+      return;
+    }
+
+    if (googleSigningIn) return;
+
+    googleSigningIn = true;
+
+    showToast("Connecting to Google...");
+
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+
+      provider.setCustomParameters({
+        prompt: "select_account"
+      });
+
+      /*
+       * Redirect is used for better compatibility
+       * with mobile browsers and installed PWAs.
+       */
+
+      await auth.signInWithRedirect(provider);
+
+    } catch (error) {
+      googleSigningIn = false;
+
+      console.error("Google Sign-In error:", error);
+
+      showToast(getFriendlyError(error));
+    }
   }
 
   /* ==========================================
@@ -493,10 +672,21 @@
         <div class="pm-auth-description">
           ${
             isRegister
-              ? "Create your Preach Mate account. You must verify your email address after registration."
-              : "Log in using your registered email address and password."
+              ? "Create your Preach Mate account."
+              : "Sign in to your Preach Mate account."
           }
         </div>
+
+        <button
+          type="button"
+          class="pm-auth-google"
+          id="pmAuthGoogle"
+        >
+          <span class="pm-google-g">G</span>
+          Continue with Google
+        </button>
+
+        <div class="pm-auth-divider">OR</div>
 
         <label for="pmAuthEmail">Email Address</label>
 
@@ -597,6 +787,11 @@
       closeAuthDialog
     );
 
+    $("pmAuthGoogle").addEventListener(
+      "click",
+      signInWithGoogle
+    );
+
     $("pmAuthShowPassword").addEventListener(
       "click",
       () => togglePassword(
@@ -642,6 +837,7 @@
             showAuthError(
               "Dapat hindi bababa sa 6 characters ang password."
             );
+
             return;
           }
 
@@ -649,6 +845,7 @@
             showAuthError(
               "Hindi magkapareho ang password at confirmation."
             );
+
             return;
           }
         }
@@ -666,7 +863,10 @@
           }
 
         } catch (error) {
-          console.error("Preach Mate authentication:", error);
+          console.error(
+            "Preach Mate authentication:",
+            error
+          );
 
           showAuthError(getFriendlyError(error));
 
@@ -675,6 +875,7 @@
 
           if (button) {
             button.disabled = false;
+
             button.textContent =
               isRegister ? "Create Account" : "Login";
           }
@@ -713,40 +914,30 @@
       showAuthInfo(
         "Account created! A verification link has been sent to " +
         email +
-        ". Open your email and click the link before proceeding."
+        ". Open your email and click the link."
       );
 
       showToast("Verification email sent!");
 
-      /*
-       * Keep the form open so the user can read the message.
-       * Firebase has already created the account.
-       */
-
       renderAccountPanel();
 
     } catch (error) {
-      console.error("Verification email error:", error);
+      console.error(
+        "Verification email error:",
+        error
+      );
 
       showAuthError(
         "Account created, but the verification email could not be sent. " +
-        "Use Resend Verification Email after closing this form. " +
         getFriendlyError(error)
       );
 
       renderAccountPanel();
-      return;
     }
-
-    /*
-     * The account is created, but the email is not yet verified.
-     * The user can close the dialog and resend the verification email
-     * from the account panel.
-     */
   }
 
   /* ==========================================
-     LOGIN
+     EMAIL / PASSWORD LOGIN
      ========================================== */
 
   async function loginAccount(email, password) {
@@ -763,14 +954,15 @@
 
     if (currentUser && currentUser.emailVerified) {
       closeAuthDialog();
-      showToast("Login successful. Email verified.");
+
+      showToast("Login successful.");
+
       return;
     }
 
     showAuthInfo(
       "Login successful, but your email is not verified yet. " +
-      "Open the verification link sent to your email. " +
-      "You can resend the link from the account panel."
+      "You can resend the verification email from the account panel."
     );
 
     showToast("Please verify your email.");
@@ -793,7 +985,9 @@
 
       if (currentUser.emailVerified) {
         renderAccountPanel();
+
         showToast("Verified na ang email mo!");
+
         return;
       }
 
@@ -804,7 +998,10 @@
       renderAccountPanel();
 
     } catch (error) {
-      console.error("Resend verification error:", error);
+      console.error(
+        "Resend verification error:",
+        error
+      );
 
       showToast(getFriendlyError(error));
     }
@@ -836,7 +1033,10 @@
       }
 
     } catch (error) {
-      console.error("Verification check error:", error);
+      console.error(
+        "Verification check error:",
+        error
+      );
 
       showToast(getFriendlyError(error));
     }
@@ -877,7 +1077,10 @@
       showToast("Password reset request submitted.");
 
     } catch (error) {
-      console.error("Password reset error:", error);
+      console.error(
+        "Password reset error:",
+        error
+      );
 
       showAuthError(getFriendlyError(error));
     }
@@ -990,13 +1193,13 @@
         "Hindi tama ang email o password.",
 
       "auth/too-many-requests":
-        "Masyadong maraming pagtatangka. Subukan muli mamaya.",
+        "Masyadong maraming pagtatangka. Maghintay muna bago subukan muli.",
 
       "auth/network-request-failed":
         "Walang koneksyon. Tingnan ang internet connection.",
 
       "auth/operation-not-allowed":
-        "Hindi enabled ang Email/Password sa Firebase Authentication.",
+        "Hindi enabled ang sign-in method sa Firebase Authentication.",
 
       "auth/invalid-action-code":
         "Invalid o expired ang verification link. Humingi ng bagong link.",
@@ -1010,8 +1213,23 @@
       "auth/quota-exceeded":
         "Naabot ang email sending limit. Subukan muli mamaya.",
 
-      "auth/too-many-requests":
-        "Masyadong maraming request. Maghintay muna bago subukan muli."
+      "auth/unauthorized-domain":
+        "Hindi authorized ang domain na ito. Idagdag ang domain ng Preach Mate sa Firebase Authentication > Settings > Authorized domains.",
+
+      "auth/popup-blocked":
+        "Na-block ang Google sign-in popup. Subukan muli.",
+
+      "auth/operation-not-supported-in-this-environment":
+        "Hindi suportado ang sign-in sa environment na ito. Buksan ang Preach Mate sa supported browser.",
+
+      "auth/account-exists-with-different-credential":
+        "May account nang gumagamit ng email na ito sa ibang sign-in method. Subukan ang dating paraan ng pag-login.",
+
+      "auth/web-storage-unsupported":
+        "Hindi available ang browser storage. Buksan ang Preach Mate sa supported browser.",
+
+      "auth/cancelled-popup-request":
+        "Nakansela ang sign-in request. Subukan muli."
     };
 
     return messages[error && error.code] ||
@@ -1045,7 +1263,7 @@
 
     toast._timer = setTimeout(() => {
       toast.style.display = "none";
-    }, 3500);
+    }, 4000);
   }
 
   /* ==========================================
@@ -1056,11 +1274,6 @@
     injectStyles();
 
     initFirebase();
-
-    /*
-     * Retry briefly in case the existing app creates
-     * its drawer after this script starts.
-     */
 
     let attempts = 0;
 
@@ -1088,9 +1301,9 @@
     start();
   }
 
-  /*
-   * Public interface for the future Firestore integration.
-   */
+  /* ==========================================
+     PUBLIC FIREBASE INTERFACE
+     ========================================== */
 
   window.PreachMateFirebase = {
     get auth() {
@@ -1105,6 +1318,7 @@
       return firebaseReady;
     },
 
+    signInWithGoogle,
     resendVerification,
     refreshVerification
   };
