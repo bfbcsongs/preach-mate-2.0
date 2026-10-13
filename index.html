@@ -189,24 +189,30 @@ input,button,select,textarea{font-size:16px}
 </head>
 <body>
 <div id="app">
-<header class="topbar">
-  <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
-
+  <header class="topbar">
+    <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
+    
+<div class="brand-wrap">
   <div class="brand-wrap">
-    <div>
-      <div class="brand">POTTER'S HOUSE</div>
-      <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">
-        ILAGAN
-      </small>
-    </div>
-
-    <img id="topbarLogo"
-         class="brand-logo hidden"
-         alt="Preach Mate logo">
+  <div>
+    <div class="brand">POTTER'S HOUSE</div>
+    <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:-3px;line-height:1.1">
+  ILAGAN
+</small>
   </div>
 
-  <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
-</header>
+  <img id="topbarLogo"
+       class="brand-logo hidden"
+       alt="Preach Mate logo"
+       title="Upload or change logo">
+</div>
+  <img id="topbarLogo"
+       class="brand-logo hidden"
+       alt="Preach Mate logo"
+       title="Upload or change logo">
+</div>
+    <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
+  </header>
   <div class="searchbar"><input id="searchInput" type="search" placeholder="Search notes..." autocomplete="off" aria-label="Search notes"></div>
   <nav class="category-row" id="categoryTabs" aria-label="Categories"></nav>
   <main class="home-content">
@@ -230,6 +236,7 @@ input,button,select,textarea{font-size:16px}
        alt="Preach Mate logo"
        title="Upload or change logo">
 </div>
+<button class="drawer-item" id="drawerLogoUpload">▧ &nbsp; Upload / Change Logo</button>
     <button class="drawer-item" id="drawerHome">⌂ &nbsp; All Notes</button>
     <button class="drawer-item" id="drawerFavorites">☆ &nbsp; Favorites</button>
     <button class="drawer-item" id="drawerNewCategory">⊞ &nbsp; Add Category</button>
@@ -544,38 +551,9 @@ function compressLogo(file){
   reader.readAsDataURL(file);
 }
 
-/* LOGO SECURITY: REQUIRE 5 TAPS */
-let logoTapCount = 0;
-let logoTapTimer = null;
-
-function setupLogoFiveTap(id){
-  const logo = $(id);
-  if(!logo) return;
-
-  logo.style.cursor = "pointer";
-
-  logo.addEventListener("click", function(e){
-    e.preventDefault();
-    e.stopPropagation();
-
-    logoTapCount++;
-
-    clearTimeout(logoTapTimer);
-
-    if(logoTapCount >= 5){
-      logoTapCount = 0;
-      chooseLogo();
-      return;
-    }
-
-    logoTapTimer = setTimeout(() => {
-      logoTapCount = 0;
-    }, 2000);
-  });
-}
-
-setupLogoFiveTap("topbarLogo");
-setupLogoFiveTap("drawerLogo");
+$("drawerLogoUpload").addEventListener("click", chooseLogo);
+$("topbarLogo").addEventListener("click", chooseLogo);
+$("drawerLogo").addEventListener("click", chooseLogo);
 
 $("logoFileInput").addEventListener("change", e => {
   const file = e.target.files && e.target.files[0];
@@ -1213,10 +1191,8 @@ document.addEventListener("visibilitychange",()=>{
 persist();
 renderCategories();
 renderNotes();
-applySavedLogo();
 
 })();
- }
 </script>
 </body>
 </html>
