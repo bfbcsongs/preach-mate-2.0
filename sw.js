@@ -1,106 +1,51 @@
-
-"use strict";
-
-const CACHE_NAME = "preach-mate-cache-v2";
-
-const APP_FILES = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon-192.png"
+const CACHE_NAME = 'preach-mate-v1';
+const ASSETS_TO_CACHE = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-self.addEventListener("install", event => {
+// Install Event: Caches all critical files
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_FILES))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Caching app assets');
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
   );
+  self.skipWaiting();
 });
 
-self.addEventListener("activate", event => {
+// Activate Event: Cleans up old caches if updated
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(key =>
-            key.startsWith("preach-mate-cache-") &&
-            key !== CACHE_NAME
-          )
-          .map(key => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", event => {
-  const request = event.request;
-
-  if (request.method !== "GET") return;
-
-  const url = new URL(request.url);
-
-  if (url.origin !== self.location.origin) return;
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response && response.ok) {
-            const copy = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => cache.put("./index.html", copy))
-              .catch(() => {});
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('[Service Worker] Deleting old cache:', cache);
+            return caches.delete(cache);
           }
-
-          return response;
         })
-        .catch(async () => {
-          const cachedPage =
-            await caches.match("./index.html");
+      );
+    })
+  );
+  self.clients.claim();
+});
 
-          if (cachedPage) return cachedPage;
-
-          const cachedRoot =
-            await caches.match("./");
-
-          if (cachedRoot) return cachedRoot;
-
-          return new Response(
-            "Preach Mate is offline. Open the app online once before using it offline.",
-            {
-              status: 503,
-              headers: {
-                "Content-Type":
-                  "text/plain; charset=utf-8"
-              }
-            }
-          );
-        })
-    );
-
-    return;
-  }
-
+// Fetch Event: Serves files from cache when offline, falls back to network
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(request).then(response => {
-        if (
-          response &&
-          response.ok &&
-          response.type === "basic"
-        ) {
-          const copy = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(cache => cache.put(request, copy))
-            .catch(() => {});
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
         }
-
-        return response;
       });
     })
   );
