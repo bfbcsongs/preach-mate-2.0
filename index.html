@@ -66,6 +66,7 @@ input,button,select,textarea{font-size:16px}
 .drawer-title{font-size:21px;font-weight:800;padding:10px 6px 16px}
 .drawer-item{border:0;background:transparent;text-align:left;padding:12px;border-radius:10px;font-size:15px}
 .drawer-item:active,.drawer-item:hover{background:var(--bg)}
+.drawer-item.install-app{color:#2563eb;font-weight:700}
 .drawer-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:14px 10px 5px}
 .drawer-categories{display:flex;flex-direction:column;gap:3px}
 .drawer-category{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:#fff;padding:11px 10px;border-radius:9px;font-size:14px;user-select:none;-webkit-user-select:none}
@@ -166,7 +167,7 @@ input,button,select,textarea{font-size:16px}
     <button class="drawer-item" id="drawerFavorites">☆ &nbsp; Favorites</button>
     <button class="drawer-item" id="drawerNewCategory">⊞ &nbsp; Add Category</button>
     <button class="drawer-item" id="drawerNewNote">＋ &nbsp; New Note</button>
-    <button class="drawer-item" id="drawerInstall">⬇ &nbsp; Install Preach Mate</button>
+    <button class="drawer-item install-app" id="drawerInstall">⬇ &nbsp; Install Preach Mate</button>
     <div class="drawer-section-title">Your Categories</div>
     <div class="drawer-categories" id="drawerCategories"></div>
     <button class="drawer-item" id="drawerExport">↗ &nbsp; Backup Notes</button>
@@ -229,7 +230,7 @@ input,button,select,textarea{font-size:16px}
 <input type="file" id="restoreFileInput" accept=".json,application/json" class="hidden">
 
 <script>
-  (() => {
+(() => {
 "use strict";
 
 const $ = id => document.getElementById(id);
@@ -283,7 +284,7 @@ function safeStorageSet(key,value){
   }
 }
 
-/* ADDITIONAL DURABLE BACKUP USING INDEXEDDB */
+/* DURABLE BACKUP USING INDEXEDDB */
 let backupTimer=null;
 let backupWriteQueue=Promise.resolve();
 
@@ -374,20 +375,30 @@ function flushDurableBackup(){
   return backupWriteQueue;
 }
 
-/* INSTALL BUTTON */
+/* REQUEST PERSISTENT STORAGE WHEN SUPPORTED */
+async function requestPersistentStorage(){
+  try{
+    if(navigator.storage&&navigator.storage.persist){
+      const alreadyPersistent=await navigator.storage.persisted();
+      if(alreadyPersistent)return true;
+      return await navigator.storage.persist();
+    }
+  }catch(e){}
+  return false;
+}
+  /* INSTALL BUTTON */
 let deferredInstallPrompt=null;
 let installCompleted=false;
 
 function isInstalledApp(){
-  return installCompleted ||
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.matchMedia("(display-mode: fullscreen)").matches ||
+  return installCompleted||
+    window.matchMedia("(display-mode: standalone)").matches||
+    window.matchMedia("(display-mode: fullscreen)").matches||
     navigator.standalone===true;
 }
 function updateInstallButton(){
   const button=$("drawerInstall");
-  if(!button)return;
-  button.classList.toggle("hidden",isInstalledApp());
+  if(button)button.classList.toggle("hidden",isInstalledApp());
 }
 window.addEventListener("beforeinstallprompt",event=>{
   event.preventDefault();
@@ -401,7 +412,7 @@ window.addEventListener("appinstalled",()=>{
   showToast("Preach Mate is installed!");
 });
 
-/* RECOVERABLE STARTUP STATE */
+/* STARTUP DATA */
 const DEFAULT_CATEGORIES=["All Notes","Personal","Study","Work","Ideas"];
 const initialCategoriesRaw=safeStorageGet(CATEGORIES_KEY);
 const initialNotesRaw=safeStorageGet(STORAGE_KEY);
@@ -411,9 +422,8 @@ const categoriesWereStored=Array.isArray(initialCategories)&&initialCategories.l
 const notesWereStored=Array.isArray(initialNotes);
 
 let categories=categoriesWereStored?initialCategories:[...DEFAULT_CATEGORIES];
-if(!Array.isArray(categories)||!categories.length)categories=[...DEFAULT_CATEGORIES];
-if(!categories.includes("All Notes"))categories.unshift("All Notes");
-categories=["All Notes",...categories.filter(c=>c!=="All Notes")];
+categories=["All Notes",...categories.filter(c=>typeof c==="string"&&c!=="All Notes")];
+categories=[...new Set(categories)];
 
 let notes=notesWereStored?initialNotes:null;
 if(!Array.isArray(notes)){
@@ -424,7 +434,11 @@ if(!Array.isArray(notes)){
     category:"Personal",favorite:false,pinned:false,fontSize:17,color:"#111827",updated:Date.now()
   }];
 }
+notes=notes.filter(n=>n&&typeof n==="object");
 notes.forEach(n=>{
+  if(!n.id)n.id=makeId();
+  if(typeof n.title!=="string")n.title="";
+  if(typeof n.content!=="string")n.content="";
   if(typeof n.pinned!=="boolean")n.pinned=false;
   if(typeof n.favorite!=="boolean")n.favorite=false;
 });
@@ -452,16 +466,18 @@ function scheduleSavedStatus(){
   saveStatusTimer=setTimeout(()=>setSaveStatus("saved"),220);
 }
 function persist(){
+  let localSaved=true;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify(notes));
     localStorage.setItem(CATEGORIES_KEY,JSON.stringify(categories));
-    scheduleDurableBackup();
-    return true;
   }catch(e){
-    scheduleDurableBackup();
-    showToast("Local save failed. Keep a backup of your notes.");
-    return false;
+    localSaved=false;
   }
+  scheduleDurableBackup();
+  if(!localSaved){
+    showToast("Local save failed. Export a backup if possible.");
+  }
+  return localSaved;
 }
 function currentNote(){
   return notes.find(n=>n.id===currentNoteId)||null;
@@ -497,7 +513,7 @@ function showToast(msg){
   toastTimer=setTimeout(()=>$("toast").classList.add("hidden"),2400);
 }
 
-/* LOGO: LOCAL STORAGE PLUS DURABLE BACKUP */
+/* LOGO STORAGE AND RECOVERY */
 function applySavedLogo(){
   const data=safeStorageGet(LOGO_KEY);
   ["topbarLogo","drawerLogo"].forEach(id=>{
@@ -569,8 +585,9 @@ function compressLogo(file){
               if(saved){
                 applySavedLogo();
                 scheduleDurableBackup();
-                flushDurableBackup();
-                showToast("Logo saved on this device!");
+                flushDurableBackup().then(()=>{
+                  showToast("Logo saved on this device!");
+                });
               }else{
                 showToast("Could not save logo. Device storage may be full.");
               }
@@ -598,7 +615,7 @@ function compressLogo(file){
   reader.readAsDataURL(file);
 }
 
-/* FIVE TAPS ON THE BRANDING AREA TO CHANGE LOGO */
+/* FIVE TAPS ON BRANDING TO CHANGE LOGO */
 function setupLogoFiveTap(id){
   const area=$(id);
   if(!area)return;
@@ -657,7 +674,8 @@ function updatePinMenu(){
   const n=currentNote();
   if(n)$("menuPin").textContent=n.pinned?"📌 Unpin Note":"📌 Pin to Top";
 }
-    /* CATEGORIES */
+
+/* CATEGORIES */
 function renderCategories(){
   const row=$("categoryTabs");
   row.innerHTML="";
@@ -846,8 +864,7 @@ function renderNotes(){
   });
   $("emptyState").classList.toggle("hidden",list.length!==0);
 }
-
-function openNote(id){
+  function openNote(id){
   currentNoteId=id;
   const n=currentNote();
   if(!n)return;
@@ -869,8 +886,12 @@ function openNote(id){
   setSaveStatus("saved");
 }
 function newNote(){
-  const cat=activeCategory!=="All Notes"&&categories.includes(activeCategory)?activeCategory:(categories.find(c=>c!=="All Notes")||"Personal");
-  const n={id:makeId(),title:"",content:"",category:cat,favorite:false,pinned:false,fontSize:17,color:"#111827",updated:Date.now()};
+  const cat=activeCategory!=="All Notes"&&categories.includes(activeCategory)
+    ?activeCategory:(categories.find(c=>c!=="All Notes")||"Personal");
+  const n={
+    id:makeId(),title:"",content:"",category:cat,
+    favorite:false,pinned:false,fontSize:17,color:"#111827",updated:Date.now()
+  };
   notes.unshift(n);
   persist();
   openNote(n.id);
@@ -1095,7 +1116,8 @@ function addCategoryDialog(){
 function moveCategoryDialog(){
   const n=currentNote();
   if(!n)return;
-  const options=categories.filter(c=>c!=="All Notes").map(c=>`<option value="${esc(c)}" ${c===n.category?"selected":""}>${esc(c)}</option>`).join("");
+  const options=categories.filter(c=>c!=="All Notes")
+    .map(c=>`<option value="${esc(c)}" ${c===n.category?"selected":""}>${esc(c)}</option>`).join("");
   openDialog("Move to Category",`<select id="dialogMoveCategory">${options}</select>`,()=>{
     const cat=$("dialogMoveCategory").value;
     if(!cat)return false;
@@ -1141,14 +1163,16 @@ function showFavorites(){
 function openDrawer(){$("drawerBackdrop").classList.remove("hidden")}
 function closeDrawer(){$("drawerBackdrop").classList.add("hidden")}
 
+/* EXPORT BACKUP INCLUDING LOGO */
 function exportNotes(){
   try{
     const backup={
       app:"Preach Mate",
-      version:1,
+      version:2,
       exportedAt:new Date().toISOString(),
       categories:categories,
-      notes:notes
+      notes:notes,
+      logo:safeStorageGet(LOGO_KEY)
     };
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
     const url=URL.createObjectURL(blob);
@@ -1160,7 +1184,7 @@ function exportNotes(){
     a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1500);
     closeDrawer();
-    showToast("Backup exported successfully!");
+    showToast("Backup exported, including logo!");
   }catch(e){
     showToast("Unable to create backup.");
   }
@@ -1191,12 +1215,14 @@ function restoreNotesFromFile(file){
         This will replace your current notes and categories with the selected backup.
         <br><br>Notes in backup: <b>${data.notes.length}</b>
         <br>Categories in backup: <b>${data.categories.length}</b>
-        <br><br>Your saved logo will not be changed.
+        <br><br>The logo will also be restored if this backup contains one.
       </p>`,()=>{
         const oldNotes=notes;
         const oldCategories=categories;
         const oldActiveCategory=activeCategory;
         const oldFavoritesOnly=favoritesOnly;
+        const oldLogo=safeStorageGet(LOGO_KEY);
+
         notes=data.notes.map(n=>({...n,favorite:!!n.favorite,pinned:!!n.pinned}));
         categories=["All Notes",...new Set(data.categories.map(c=>c.trim()).filter(c=>c&&c!=="All Notes"))];
         notes.forEach(n=>{
@@ -1204,19 +1230,35 @@ function restoreNotesFromFile(file){
             categories.push(n.category);
           }
         });
+
+        if(typeof data.logo==="string"&&data.logo.startsWith("data:image/")){
+          if(!safeStorageSet(LOGO_KEY,data.logo)){
+            notes=oldNotes;
+            categories=oldCategories;
+            safeStorageSet(LOGO_KEY,oldLogo||"");
+            showToast("Could not restore logo. Storage may be full.");
+            return false;
+          }
+        }
+
         if(!persist()){
           notes=oldNotes;
           categories=oldCategories;
           activeCategory=oldActiveCategory;
           favoritesOnly=oldFavoritesOnly;
+          if(oldLogo)safeStorageSet(LOGO_KEY,oldLogo);
+          else try{localStorage.removeItem(LOGO_KEY)}catch(e){}
           return false;
         }
+
         activeCategory="All Notes";
         favoritesOnly=false;
         $("searchInput").value="";
+        applySavedLogo();
         renderCategories();
         renderNotes();
         closeDrawer();
+        flushDurableBackup();
         showToast("Backup restored successfully!");
         return true;
       },"Restore",true);
@@ -1226,7 +1268,7 @@ function restoreNotesFromFile(file){
   };
   reader.readAsText(file);
 }
-    /* TOOLBAR POSITION */
+  /* TOOLBAR POSITION */
 function updateToolbarPosition(){
   if(!isEditMode||editor.classList.contains("hidden")){
     toolbar.classList.add("hidden");
@@ -1473,7 +1515,7 @@ $("dialogConfirm").addEventListener("click",()=>{
   }
 });
 
-/* INSTALL BUTTON INSIDE THE APP */
+/* INSTALL BUTTON */
 $("drawerInstall").addEventListener("click",async()=>{
   if(isInstalledApp()){
     updateInstallButton();
@@ -1577,33 +1619,45 @@ window.addEventListener("beforeunload",()=>{
   if(currentNoteId)saveCurrentNote();
 });
 
-/* STARTUP WITH BACKUP RECOVERY */
+/* CORRECTED STARTUP WITH INDEXEDDB RECOVERY */
 async function startApp(){
+  // Ask the browser to reduce automatic storage eviction where supported.
+  requestPersistentStorage();
+
+  // Read the existing IndexedDB backup BEFORE saving current/default data.
   const backup=await readDurableBackup();
 
-  // Recover only when the corresponding localStorage data is missing
-  // or invalid. A deliberately empty notes array remains empty.
+  // Recover notes only if LocalStorage notes were absent or invalid.
+  // A valid empty array means the user intentionally has no notes.
   if(!notesWereStored&&backup&&Array.isArray(backup.notes)){
-    notes=backup.notes;
+    notes=backup.notes.filter(n=>n&&typeof n==="object");
     notes.forEach(n=>{
+      if(!n.id)n.id=makeId();
+      if(typeof n.title!=="string")n.title="";
+      if(typeof n.content!=="string")n.content="";
       if(typeof n.pinned!=="boolean")n.pinned=false;
       if(typeof n.favorite!=="boolean")n.favorite=false;
     });
-    showToast("Recovered notes from device backup.");
+    showToast("Notes recovered from device backup.");
   }
 
+  // Recover categories only when no valid categories were saved locally.
   if(!categoriesWereStored&&backup&&Array.isArray(backup.categories)&&backup.categories.length){
     categories=["All Notes",...backup.categories.filter(c=>typeof c==="string"&&c!=="All Notes")];
-    categories=[...new Set(categories)];
   }
 
+  // Restore the logo from IndexedDB if the logo key is missing.
   if(!safeStorageGet(LOGO_KEY)&&backup&&typeof backup.logo==="string"&&backup.logo.startsWith("data:image/")){
     safeStorageSet(LOGO_KEY,backup.logo);
   }
 
-  // Normalize recovered categories and note metadata.
+  // Normalize categories and ensure every note has a valid category.
+  categories=categories.filter(c=>typeof c==="string"&&c.trim()).map(c=>c.trim());
   categories=["All Notes",...categories.filter(c=>c!=="All Notes")];
   categories=[...new Set(categories)];
+
+  if(!categories.some(c=>c!=="All Notes"))categories.push("Personal");
+
   notes.forEach(n=>{
     if(!n.category||n.category==="All Notes")n.category=categories.find(c=>c!=="All Notes")||"Personal";
     if(!categories.includes(n.category))categories.push(n.category);
@@ -1611,16 +1665,22 @@ async function startApp(){
     if(typeof n.pinned!=="boolean")n.pinned=false;
   });
 
-  persist();
+  // Restore first, then render. Persist recovered data back to both stores.
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(notes));
+    localStorage.setItem(CATEGORIES_KEY,JSON.stringify(categories));
+  }catch(e){}
+
   renderCategories();
   renderNotes();
   applySavedLogo();
   updateInstallButton();
 
-  // Save the recovered/current state to the durable backup.
+  // Ensure the latest state is written to IndexedDB.
   await flushDurableBackup();
 }
-startApp().catch(()=>{
+startApp().catch(error=>{
+  console.error("Preach Mate startup failed:",error);
   renderCategories();
   renderNotes();
   applySavedLogo();
