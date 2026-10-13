@@ -1397,6 +1397,17 @@ $("drawerNewNote").addEventListener("click",()=>{
   newNote();
 });
 $("drawerExport").addEventListener("click",exportNotes);
+$("drawerRestore").addEventListener("click",()=>{
+  closeDrawer();
+  const input=$("restoreFileInput");
+  input.value="";
+  input.click();
+});
+
+$("restoreFileInput").addEventListener("change",e=>{
+  const file=e.target.files&&e.target.files[0];
+  if(file)restoreNotesFromFile(file);
+});
 $("btnFavorites").addEventListener("click",showFavorites);
 $("searchInput").addEventListener("input",renderNotes);
 $("dialogCancel").addEventListener("click",closeDialog);
