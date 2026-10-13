@@ -196,7 +196,7 @@ input,button,select,textarea{font-size:16px}
   <div class="brand-wrap">
   <div>
     <div class="brand">POTTER'S HOUSE</div>
-    <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:-3px;line-height:1.1">
+    <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">
   ILAGAN
 </small>
   </div>
@@ -551,9 +551,38 @@ function compressLogo(file){
   reader.readAsDataURL(file);
 }
 
-$("drawerLogoUpload").addEventListener("click", chooseLogo);
-$("topbarLogo").addEventListener("click", chooseLogo);
-$("drawerLogo").addEventListener("click", chooseLogo);
+/* LOGO SECURITY: REQUIRE 5 TAPS */
+let logoTapCount = 0;
+let logoTapTimer = null;
+
+function setupLogoFiveTap(id){
+  const logo = $(id);
+  if(!logo) return;
+
+  logo.style.cursor = "pointer";
+
+  logo.addEventListener("click", function(e){
+    e.preventDefault();
+    e.stopPropagation();
+
+    logoTapCount++;
+
+    clearTimeout(logoTapTimer);
+
+    if(logoTapCount >= 5){
+      logoTapCount = 0;
+      chooseLogo();
+      return;
+    }
+
+    logoTapTimer = setTimeout(() => {
+      logoTapCount = 0;
+    }, 2000);
+  });
+}
+
+setupLogoFiveTap("topbarLogo");
+setupLogoFiveTap("drawerLogo");
 
 $("logoFileInput").addEventListener("change", e => {
   const file = e.target.files && e.target.files[0];
