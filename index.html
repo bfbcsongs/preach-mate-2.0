@@ -22,6 +22,40 @@ input,button,select,textarea{font-size:16px}
 #app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .topbar{min-height:58px;background:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;padding-top:max(8px,env(safe-area-inset-top))}
 .brand{font-size:20px;font-weight:800;flex:1}
+  
+.brand-wrap{
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.brand-wrap .brand{min-width:0}
+.brand-logo{
+  width:36px;
+  height:36px;
+  flex-shrink:0;
+  object-fit:contain;
+  border-radius:7px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.brand-logo.hidden{display:none!important}
+.drawer-brand-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.drawer-brand-row .drawer-title{
+  flex:1;
+  min-width:0;
+}
+.drawer-brand-row .brand-logo{
+  width:40px;
+  height:40px;
+}
 .icon-btn{border:0;background:transparent;border-radius:10px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;color:var(--text);flex-shrink:0}
 .icon-btn:active{background:var(--border)}
 .searchbar{padding:9px 12px 5px;background:#fff;flex-shrink:0}
@@ -157,7 +191,14 @@ input,button,select,textarea{font-size:16px}
 <div id="app">
   <header class="topbar">
     <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
-    <div class="brand">Preach Mate</div>
+    
+<div class="brand-wrap">
+  <div class="brand">Preach Mate</div>
+  <img id="topbarLogo"
+       class="brand-logo hidden"
+       alt="Preach Mate logo"
+       title="Upload or change logo">
+</div>
     <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
   </header>
   <div class="searchbar"><input id="searchInput" type="search" placeholder="Search notes..." autocomplete="off" aria-label="Search notes"></div>
@@ -172,7 +213,18 @@ input,button,select,textarea{font-size:16px}
 
 <div class="drawer-backdrop hidden" id="drawerBackdrop">
   <aside class="drawer">
-    <div class="drawer-title">Preach Mate <small style="display:block;font-size:12px;font-weight:500;color:#6b7280;margin-top:4px">by:paulm.</small></div>
+    
+<div class="drawer-brand-row">
+  <div class="drawer-title">
+    Preach Mate
+    <small style="display:block;font-size:12px;font-weight:500;color:#6b7280;margin-top:4px">by:paulm.</small>
+  </div>
+  <img id="drawerLogo"
+       class="brand-logo hidden"
+       alt="Preach Mate logo"
+       title="Upload or change logo">
+</div>
+<button class="drawer-item" id="drawerLogoUpload">▧ &nbsp; Upload / Change Logo</button>
     <button class="drawer-item" id="drawerHome">⌂ &nbsp; All Notes</button>
     <button class="drawer-item" id="drawerFavorites">☆ &nbsp; Favorites</button>
     <button class="drawer-item" id="drawerNewCategory">⊞ &nbsp; Add Category</button>
@@ -232,6 +284,8 @@ input,button,select,textarea{font-size:16px}
 </div>
 <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
+<input type="file" id="logoFileInput" accept="image/*" class="hidden">
+  
 <script>
 (() => {
 "use strict";
@@ -344,6 +398,155 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>$("toast").classList.add("hidden"),1900);
 }
+  /* PREACH MATE LOGO: LOCAL STORAGE + IMAGE COMPRESSION */
+const LOGO_KEY = "preach_mate_logo_v1";
+const MAX_LOGO_BYTES = 21 * 1024;
+
+function applySavedLogo(){
+  let data = null;
+  try {
+    data = localStorage.getItem(LOGO_KEY);
+  } catch(e) {}
+
+  ["topbarLogo", "drawerLogo"].forEach(id => {
+    const img = $(id);
+    if(!img) return;
+
+    if(data){
+      img.src = data;
+      img.classList.remove("hidden");
+    } else {
+      img.removeAttribute("src");
+      img.classList.add("hidden");
+    }
+  });
+}
+
+function chooseLogo(){
+  const input = $("logoFileInput");
+  if(!input) return;
+  input.value = "";
+  input.click();
+}
+
+function compressLogo(file){
+  if(!file || !file.type.startsWith("image/")){
+    showToast("Please select an image.");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onerror = () => showToast("Unable to read this image.");
+
+  reader.onload = () => {
+    const image = new Image();
+
+    image.onerror = () => showToast("Unable to open this image.");
+
+    image.onload = () => {
+      const originalWidth = image.naturalWidth;
+      const originalHeight = image.naturalHeight;
+
+      if(!originalWidth || !originalHeight){
+        showToast("Invalid image.");
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      if(!ctx){
+        showToast("Unable to process this image.");
+        return;
+      }
+
+      const sizes = [320, 280, 240, 200, 160];
+      const qualities = [0.82, 0.70, 0.58, 0.46, 0.34, 0.25];
+
+      let sizeIndex = 0;
+      let qualityIndex = 0;
+      let finished = false;
+
+      function tryCompression(){
+        if(finished) return;
+
+        const maxSide = sizes[sizeIndex];
+        const scale = Math.min(
+          1,
+          maxSide / Math.max(originalWidth, originalHeight)
+        );
+
+        canvas.width = Math.max(1, Math.round(originalWidth * scale));
+        canvas.height = Math.max(1, Math.round(originalHeight * scale));
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(blob => {
+          if(finished) return;
+
+          if(!blob){
+            showToast("Unable to compress this image.");
+            return;
+          }
+
+          if(blob.size <= MAX_LOGO_BYTES){
+            finished = true;
+
+            const resultReader = new FileReader();
+
+            resultReader.onerror = () =>
+              showToast("Unable to save the image.");
+
+            resultReader.onload = () => {
+              try {
+                localStorage.setItem(LOGO_KEY, resultReader.result);
+                applySavedLogo();
+                showToast("Logo saved on this device!");
+              } catch(e) {
+                showToast("Could not save logo. Device storage may be full.");
+              }
+            };
+
+            resultReader.readAsDataURL(blob);
+            return;
+          }
+
+          qualityIndex++;
+
+          if(qualityIndex >= qualities.length){
+            qualityIndex = 0;
+            sizeIndex++;
+          }
+
+          if(sizeIndex >= sizes.length){
+            finished = true;
+            showToast("Image is too large to compress below 21 KB.");
+            return;
+          }
+
+          tryCompression();
+        }, "image/webp", qualities[qualityIndex]);
+      }
+
+      tryCompression();
+    };
+
+    image.src = reader.result;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+$("drawerLogoUpload").addEventListener("click", chooseLogo);
+$("topbarLogo").addEventListener("click", chooseLogo);
+$("drawerLogo").addEventListener("click", chooseLogo);
+
+$("logoFileInput").addEventListener("change", e => {
+  const file = e.target.files && e.target.files[0];
+  if(file) compressLogo(file);
+});
 function cleanTemporaryMarker(root){
   root.querySelectorAll(".read-word-marker").forEach(s=>s.replaceWith(...s.childNodes));
 }
