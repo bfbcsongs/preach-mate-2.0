@@ -202,7 +202,8 @@ input,button,select,textarea{font-size:16px}
     <button class="drawer-item" id="drawerNewNote">＋ &nbsp; New Note</button>
     <div class="drawer-section-title">Your Categories</div>
     <div class="drawer-categories" id="drawerCategories"></div>
-    <button class="drawer-item" id="drawerExport">↗ &nbsp; Export Notes</button>
+    <button class="drawer-item" id="drawerExport">↗ &nbsp; Backup Notes</button>
+<button class="drawer-item" id="drawerRestore">↙ &nbsp; Restore Backup</button>
     <div class="drawer-footer">Notes are saved on this device.</div>
   </aside>
 </div>
@@ -258,7 +259,8 @@ input,button,select,textarea{font-size:16px}
 </div>
 <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="logoFileInput" accept="image/*" class="hidden">
-
+<input type="file" id="restoreFileInput" accept=".json,application/json" class="hidden">
+  
 <script>
 (() => {
 "use strict";
@@ -1030,17 +1032,145 @@ function showFavorites(){
 function openDrawer(){$("drawerBackdrop").classList.remove("hidden")}
 function closeDrawer(){$("drawerBackdrop").classList.add("hidden")}
 function exportNotes(){
-  const blob=new Blob([JSON.stringify({categories,notes},null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="preach-mate-backup.json";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  closeDrawer();
-  showToast("Backup exported");
+  try{
+    const backup = {
+      app: "Preach Mate",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      categories: categories,
+      notes: notes
+    };
+
+    const blob = new Blob(
+      [JSON.stringify(backup, null, 2)],
+      {type:"application/json"}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "preach-mate-backup.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    closeDrawer();
+    showToast("Backup exported successfully!");
+  }catch(e){
+    showToast("Unable to create backup.");
+  }
+}
+
+function restoreNotesFromFile(file){
+  if(!file)return;
+
+  const reader = new FileReader();
+
+  reader.onerror = ()=>{
+    showToast("Unable to read backup file.");
+  };
+
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+
+      if(
+        !data ||
+        !Array.isArray(data.notes) ||
+        !Array.isArray(data.categories)
+      ){
+        showToast("Invalid Preach Mate backup file.");
+        return;
+      }
+
+      const validNotes = data.notes.every(n =>
+        n &&
+        typeof n.id === "string" &&
+        typeof n.title === "string" &&
+        typeof n.content === "string"
+      );
+
+      const validCategories = data.categories.every(c =>
+        typeof c === "string" && c.trim().length > 0
+      );
+
+      if(!validNotes || !validCategories){
+        showToast("Backup data is invalid.");
+        return;
+      }
+
+      openDialog(
+        "Restore Backup?",
+        `<p style="line-height:1.5;color:#4b5563">
+          This will replace your current notes and categories with
+          the selected backup.
+          <br><br>
+          Notes in backup: <b>${data.notes.length}</b>
+          <br>
+          Categories in backup: <b>${data.categories.length}</b>
+          <br><br>
+          Your saved logo will not be changed.
+        </p>`,
+        ()=>{
+          const oldNotes = notes;
+          const oldCategories = categories;
+          const oldActiveCategory = activeCategory;
+          const oldFavoritesOnly = favoritesOnly;
+
+          notes = data.notes.map(n=>({
+            ...n,
+            favorite: !!n.favorite,
+            pinned: !!n.pinned
+          }));
+
+          categories = [
+            "All Notes",
+            ...new Set(
+              data.categories
+                .map(c=>c.trim())
+                .filter(c=>c && c!=="All Notes")
+            )
+          ];
+
+          // Add categories referenced by notes if missing.
+          notes.forEach(n=>{
+            if(
+              n.category &&
+              n.category!=="All Notes" &&
+              !categories.includes(n.category)
+            ){
+              categories.push(n.category);
+            }
+          });
+
+          if(!persist()){
+            notes = oldNotes;
+            categories = oldCategories;
+            activeCategory = oldActiveCategory;
+            favoritesOnly = oldFavoritesOnly;
+            return false;
+          }
+
+          activeCategory = "All Notes";
+          favoritesOnly = false;
+          $("searchInput").value = "";
+
+          renderCategories();
+          renderNotes();
+          closeDrawer();
+          showToast("Backup restored successfully!");
+          return true;
+        },
+        "Restore",
+        true
+      );
+    }catch(e){
+      showToast("Invalid or damaged backup file.");
+    }
+  };
+
+  reader.readAsText(file);
 }
 
 /* TOOLBAR POSITION */
