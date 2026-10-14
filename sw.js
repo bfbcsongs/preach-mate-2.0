@@ -1,7 +1,12 @@
-const CACHE_NAME = 'preach-mate-v1';
+const CACHE_NAME = 'preach-mate-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './style.css',
+  './app.js',
+  './firebase-auth.js',
+  './cloud-sync.js',
+  './logo.png',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
