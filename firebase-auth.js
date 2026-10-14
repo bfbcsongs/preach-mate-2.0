@@ -610,40 +610,64 @@
      ========================================== */
 
   async function signInWithGoogle() {
-    if (!auth || !firebaseReady) {
-      showToast("Hindi pa handa ang Firebase.");
-      return;
-    }
-
-    if (googleSigningIn) return;
-
-    googleSigningIn = true;
-
-    showToast("Connecting to Google...");
-
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-
-      provider.setCustomParameters({
-        prompt: "select_account"
-      });
-
-      /*
-       * Redirect is used for better compatibility
-       * with mobile browsers and installed PWAs.
-       */
-
-      await auth.signInWithRedirect(provider);
-
-    } catch (error) {
-      googleSigningIn = false;
-
-      console.error("Google Sign-In error:", error);
-
-      showToast(getFriendlyError(error));
-    }
+  async function signInWithGoogle() {
+  if (!auth || !firebaseReady) {
+    showToast("Hindi pa handa ang Firebase.");
+    return;
   }
 
+  if (googleSigningIn) return;
+
+  googleSigningIn = true;
+
+  const buttons = [
+    $("pmAuthGoogle"),
+    ...document.querySelectorAll(
+      "#pmAccountPanel button.google"
+    )
+  ].filter(Boolean);
+
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    provider.setCustomParameters({
+      prompt: "select_account"
+    });
+
+    const result = await auth.signInWithPopup(provider);
+
+    currentUser = result.user;
+
+    renderAccountPanel();
+    closeAuthDialog();
+
+    showToast("Welcome to Preach Mate!");
+
+  } catch (error) {
+    console.error(
+      "Google Sign-In error code:",
+      error.code
+    );
+
+    console.error(
+      "Google Sign-In error details:",
+      error
+    );
+
+    showToast(getFriendlyError(error));
+
+  } finally {
+    googleSigningIn = false;
+
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
+  }
+}
   /* ==========================================
      AUTHENTICATION FORM
      ========================================== */
