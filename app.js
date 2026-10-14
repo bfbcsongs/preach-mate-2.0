@@ -1450,12 +1450,9 @@ async function startApp(){
   // Ensure the latest state is written to IndexedDB.
   await flushDurableBackup();
 }
-startApp().catch(error=>{
-  console.error("Preach Mate startup failed:",error);
-  renderCategories();
-  renderNotes();
-  applySavedLogo();
-  updateInstallButton();
+const appStartupPromise = startApp().catch(error => {
+  console.error("Preach Mate startup error:", error);
+  throw error;
 });
 
 /* SERVICE WORKER REGISTRATION */
@@ -1472,7 +1469,7 @@ if("serviceWorker" in navigator){
 }
 
 /* END OF PREACH MATE APP */
-  /* CLOUD SYNC BRIDGE */
+/* CLOUD SYNC BRIDGE */
 window.PreachMateApp = {
   isReady: false,
 
@@ -1493,10 +1490,13 @@ window.PreachMateApp = {
       throw new Error("Invalid cloud backup.");
     }
 
-    notes = data.notes;
-    categories = data.categories;
+    const previousNotes = notes;
+    const previousCategories = categories;
 
     try {
+      notes = data.notes;
+      categories = data.categories;
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
       localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
 
@@ -1507,16 +1507,38 @@ window.PreachMateApp = {
           localStorage.removeItem(LOGO_KEY);
         }
       }
+
+      applySavedLogo();
+      renderCategories();
+      renderNotes();
+      flushDurableBackup();
+
+      return true;
     } catch (error) {
-      throw new Error("Could not save restored cloud data locally.");
+      notes = previousNotes;
+      categories = previousCategories;
+      throw new Error(
+        "Could not restore cloud data locally: " +
+        (error?.message || "Unknown error")
+      );
     }
-
-    applySavedLogo();
-    renderCategories();
-    renderNotes();
-    flushDurableBackup();
-
-    return true;
   }
 };
+
+/* SIGNAL CLOUD SYNC AFTER APP STARTUP */
+appStartupPromise
+  .then(() => {
+    window.PreachMateApp.isReady = true;
+
+    window.dispatchEvent(
+      new Event("preachmate:app-ready")
+    );
+
+    console.log("Preach Mate: app ready for cloud sync.");
+  })
+  .catch(error => {
+    window.PreachMateApp.isReady = false;
+    console.error("Preach Mate initialization failed:", error);
+  });
+
 })();
