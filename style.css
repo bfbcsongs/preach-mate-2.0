@@ -187,4 +187,17 @@ input,button,select,textarea{font-size:16px}
   border-color: #fca5a5 !important;
   background: #fef2f2 !important;
 }
+.category-tab,
+.drawer-category {
+  touch-action: pan-y; /* Allows normal vertical scrolling until long-press activates */
+}
+
+.category-tab.dragging,
+.drawer-category.dragging {
+  touch-action: none;
+  opacity: 0.75;
+  transform: scale(1.04);
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 
