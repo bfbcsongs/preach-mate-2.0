@@ -24,9 +24,10 @@
   let currentUser = null;
   let currentAuthMode = "login";
   let authReady = false;
+  let authBusy = false;
 
   /* ==========================================
-     UTILITIES
+     TOAST
      ========================================== */
 
   function showToast(message) {
@@ -73,6 +74,10 @@
     }, 3500);
   }
 
+  /* ==========================================
+     ERROR MESSAGES
+     ========================================== */
+
   function getFriendlyError(error) {
     const code = error && error.code
       ? error.code
@@ -107,13 +112,13 @@
         "Isinara ang Google sign-in window.",
 
       "auth/popup-blocked":
-        "Na-block ang Google sign-in popup. Subukan muli.",
+        "Na-block ang Google sign-in popup.",
 
       "auth/cancelled-popup-request":
         "May naunang sign-in request na hindi pa tapos.",
 
       "auth/unauthorized-domain":
-        "Hindi pa authorized ang domain na ito sa Firebase.",
+        "Hindi authorized ang domain na ito sa Firebase.",
 
       "auth/operation-not-allowed":
         "Hindi enabled ang sign-in method sa Firebase.",
@@ -139,9 +144,8 @@
     }
 
     if (error && error.message) {
-      return code
-        ? code + ": " + error.message
-        : error.message;
+      return (code ? code + ": " : "") +
+        error.message;
     }
 
     return "May naganap na error. Subukan muli.";
@@ -164,23 +168,6 @@
     );
   }
 
-  function getInitials(user) {
-    if (!user) return "PM";
-
-    const name = user.displayName ||
-      user.email ||
-      "Preach Mate";
-
-    return name
-      .split(/[\s@.]+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(function (part) {
-        return part.charAt(0).toUpperCase();
-      })
-      .join("");
-  }
-
   /* ==========================================
      FIREBASE INITIALIZATION
      ========================================== */
@@ -193,7 +180,7 @@
         );
 
         showToast(
-          "Hindi pa naglo-load ang Firebase. I-refresh ang app."
+          "Hindi nag-load ang Firebase. I-refresh ang app."
         );
 
         return false;
@@ -258,7 +245,7 @@
   }
 
   /* ==========================================
-     AUTH STYLES
+     STYLES
      ========================================== */
 
   function injectStyles() {
@@ -365,7 +352,7 @@
       #pm-auth-modal {
         width:100%;
         max-width:420px;
-        max-height:90dvh;
+        max-height:90vh;
         overflow-y:auto;
         position:relative;
         padding:24px;
@@ -568,11 +555,6 @@
     panel = document.createElement("section");
     panel.id = "pm-account-panel";
 
-    /*
-      Insert the panel at the beginning of
-      the drawer without replacing its contents.
-    */
-
     drawer.insertBefore(
       panel,
       drawer.firstChild
@@ -584,9 +566,7 @@
   function renderAccountPanel() {
     const panel = ensureAccountPanel();
 
-    if (!panel) {
-      return;
-    }
+    if (!panel) return;
 
     if (!authReady) {
       panel.innerHTML = `
@@ -612,25 +592,26 @@
         currentUser.email || ""
       );
 
+      const emailPasswordUser =
+        currentUser.providerData &&
+        currentUser.providerData.some(
+          function (provider) {
+            return provider.providerId === "password";
+          }
+        );
+
       panel.innerHTML = `
         <div class="pm-account-title">
           Signed In
         </div>
 
         <div class="pm-account-subtitle">
-          ${name}<br>
-          ${email}
+          ${name}<br>${email}
         </div>
 
         ${
-          currentUser.email &&
-          !currentUser.emailVerified &&
-          currentUser.providerData.some(
-            function (provider) {
-              return provider.providerId ===
-                "password";
-            }
-          )
+          emailPasswordUser &&
+          !currentUser.emailVerified
             ? `
               <div class="pm-account-actions">
                 <button
@@ -645,9 +626,10 @@
             : ""
         }
 
-        <div class="pm-account-actions"
-             style="margin-top:8px">
-
+        <div
+          class="pm-account-actions"
+          style="margin-top:8px"
+        >
           <button
             type="button"
             class="pm-auth-button pm-auth-danger"
@@ -655,7 +637,6 @@
           >
             Log Out
           </button>
-
         </div>
       `;
 
@@ -664,10 +645,7 @@
       );
 
       if (verifyButton) {
-        verifyButton.addEventListener(
-          "click",
-          sendVerificationEmail
-        );
+        verifyButton.onclick = sendVerificationEmail;
       }
 
       const logoutButton = document.getElementById(
@@ -675,10 +653,7 @@
       );
 
       if (logoutButton) {
-        logoutButton.addEventListener(
-          "click",
-          logout
-        );
+        logoutButton.onclick = logout;
       }
 
     } else {
@@ -692,7 +667,6 @@
         </div>
 
         <div class="pm-account-actions">
-
           <button
             type="button"
             class="pm-auth-button pm-auth-primary"
@@ -708,27 +682,20 @@
           >
             Create Account
           </button>
-
         </div>
       `;
 
       document.getElementById(
         "pm-login-button"
-      ).addEventListener(
-        "click",
-        function () {
-          openAuthDialog("login");
-        }
-      );
+      ).onclick = function () {
+        openAuthDialog("login");
+      };
 
       document.getElementById(
         "pm-register-button"
-      ).addEventListener(
-        "click",
-        function () {
-          openAuthDialog("register");
-        }
-      );
+      ).onclick = function () {
+        openAuthDialog("register");
+      };
     }
   }
 
@@ -753,7 +720,6 @@
         aria-modal="true"
         aria-labelledby="pm-auth-heading"
       >
-
         <button
           type="button"
           id="pm-auth-close"
@@ -784,7 +750,6 @@
           class="pm-auth-form"
           novalidate
         >
-
           <label class="pm-auth-field">
             <span>Email Address</span>
             <input
@@ -847,7 +812,6 @@
           >
             Log In
           </button>
-
         </form>
 
         <div
@@ -866,7 +830,6 @@
         </button>
 
         <div class="pm-auth-links">
-
           <button
             type="button"
             id="pm-auth-forgot"
@@ -882,13 +845,11 @@
           >
             Create a new account
           </button>
-
         </div>
 
         <div class="pm-auth-note">
           Preach Mate by:paulm
         </div>
-
       </div>
     `;
 
@@ -896,10 +857,7 @@
 
     document.getElementById(
       "pm-auth-close"
-    ).addEventListener(
-      "click",
-      closeAuthDialog
-    );
+    ).onclick = closeAuthDialog;
 
     overlay.addEventListener(
       "click",
@@ -912,37 +870,39 @@
 
     document.getElementById(
       "pm-auth-form"
-    ).addEventListener(
-      "submit",
-      handleAuthSubmit
-    );
+    ).onsubmit = handleAuthSubmit;
+
+    /*
+      IMPORTANT:
+      Direct onclick assignment ensures that
+      the Google button gets its handler.
+    */
 
     document.getElementById(
       "pm-google-button"
-    ).addEventListener(
-      "click",
-      signInWithGoogle
-    );
+    ).onclick = signInWithGoogle;
 
     document.getElementById(
       "pm-auth-forgot"
-    ).addEventListener(
-      "click",
-      sendPasswordReset
-    );
+    ).onclick = function () {
+      if (currentAuthMode !== "forgot") {
+        currentAuthMode = "forgot";
+        updateAuthDialog();
+        return;
+      }
+
+      sendPasswordReset();
+    };
 
     document.getElementById(
       "pm-auth-switch"
-    ).addEventListener(
-      "click",
-      function () {
-        openAuthDialog(
-          currentAuthMode === "login"
-            ? "register"
-            : "login"
-        );
-      }
-    );
+    ).onclick = function () {
+      openAuthDialog(
+        currentAuthMode === "register"
+          ? "login"
+          : "register"
+      );
+    };
 
     document.addEventListener(
       "keydown",
@@ -975,16 +935,6 @@
     );
 
     document.body.style.overflow = "hidden";
-
-    setTimeout(function () {
-      const emailInput = document.getElementById(
-        "pm-auth-email"
-      );
-
-      if (emailInput) {
-        emailInput.focus();
-      }
-    }, 100);
   }
 
   function closeAuthDialog() {
@@ -1058,26 +1008,20 @@
 
     if (registerMode) {
       heading.textContent = "Create Account";
-
       subtitle.textContent =
         "Create your Preach Mate account.";
-
       submit.textContent = "Create Account";
 
     } else if (forgotMode) {
       heading.textContent = "Reset Password";
-
       subtitle.textContent =
         "Enter your email to receive a password reset link.";
-
       submit.textContent = "Send Reset Link";
 
     } else {
       heading.textContent = "Welcome Back";
-
       subtitle.textContent =
         "Sign in to your Preach Mate account.";
-
       submit.textContent = "Log In";
     }
 
@@ -1087,12 +1031,10 @@
     confirmField.style.display =
       registerMode ? "block" : "none";
 
-    passwordInput.style.display =
-      forgotMode ? "none" : "block";
-
     passwordInput.parentElement.style.display =
       forgotMode ? "none" : "block";
 
+    passwordInput.required = !forgotMode;
     confirmInput.required = registerMode;
     nameInput.required = false;
 
@@ -1121,7 +1063,10 @@
       "pm-auth-message"
     );
 
-    if (!box) return;
+    if (!box) {
+      showToast(message);
+      return;
+    }
 
     box.textContent = message;
     box.style.display = "block";
@@ -1147,6 +1092,8 @@
   }
 
   function setAuthBusy(busy) {
+    authBusy = Boolean(busy);
+
     const ids = [
       "pm-auth-submit",
       "pm-google-button",
@@ -1159,7 +1106,7 @@
       const element = document.getElementById(id);
 
       if (element) {
-        element.disabled = Boolean(busy);
+        element.disabled = authBusy;
       }
     });
 
@@ -1167,27 +1114,54 @@
       "pm-auth-submit"
     );
 
-    if (submit && busy) {
+    if (submit && authBusy) {
       submit.textContent = "Please wait...";
     } else if (submit) {
-      updateAuthDialog();
+      if (currentAuthMode === "register") {
+        submit.textContent = "Create Account";
+      } else if (currentAuthMode === "forgot") {
+        submit.textContent = "Send Reset Link";
+      } else {
+        submit.textContent = "Log In";
+      }
+    }
+
+    const googleButton = document.getElementById(
+      "pm-google-button"
+    );
+
+    if (googleButton) {
+      googleButton.textContent = authBusy
+        ? "Connecting to Google..."
+        : "Continue with Google";
     }
   }
 
   /* ==========================================
-     GOOGLE SIGN-IN
+     GOOGLE SIGN-IN — FIXED
      ========================================== */
 
   async function signInWithGoogle() {
-    if (!auth) {
+    console.log(
+      "Preach Mate: Google Sign-In button clicked."
+    );
+
+    if (authBusy) return;
+
+    if (!window.firebase || !auth) {
       showAuthMessage(
-        "Firebase is not ready. Please refresh the app."
+        "Firebase is not ready. Refresh the app and try again."
       );
+
+      console.error(
+        "Google Sign-In stopped: Firebase Auth is unavailable."
+      );
+
       return;
     }
 
-    setAuthBusy(true);
     clearAuthMessage();
+    setAuthBusy(true);
 
     try {
       const provider =
@@ -1197,8 +1171,9 @@
         prompt: "select_account"
       });
 
-      const result =
-        await auth.signInWithPopup(provider);
+      const result = await auth.signInWithPopup(
+        provider
+      );
 
       currentUser = result.user || null;
 
@@ -1211,7 +1186,9 @@
 
     } catch (error) {
       console.error(
-        "Google sign-in error:",
+        "Google Sign-In Error:",
+        error.code,
+        error.message,
         error
       );
 
@@ -1225,15 +1202,17 @@
   }
 
   /* ==========================================
-     LOGIN / REGISTER FORM
+     LOGIN / REGISTER
      ========================================== */
 
   async function handleAuthSubmit(event) {
     event.preventDefault();
 
+    if (authBusy) return;
+
     if (!auth) {
       showAuthMessage(
-        "Firebase is not ready. Please refresh the app."
+        "Firebase is not ready. Refresh the app."
       );
       return;
     }
@@ -1271,10 +1250,36 @@
           );
         }
 
-        await registerAccount(
-          email,
-          password,
-          name
+        const result =
+          await auth.createUserWithEmailAndPassword(
+            email,
+            password
+          );
+
+        if (name && result.user) {
+          await result.user.updateProfile({
+            displayName: name
+          });
+        }
+
+        if (result.user) {
+          try {
+            await result.user.sendEmailVerification();
+          } catch (verificationError) {
+            console.error(
+              "Verification email error:",
+              verificationError
+            );
+          }
+        }
+
+        currentUser = result.user || null;
+
+        closeAuthDialog();
+        renderAccountPanel();
+
+        showToast(
+          "Account created successfully."
         );
 
       } else if (currentAuthMode === "forgot") {
@@ -1286,9 +1291,19 @@
         );
 
       } else {
-        await loginAccount(
-          email,
-          password
+        const result =
+          await auth.signInWithEmailAndPassword(
+            email,
+            password
+          );
+
+        currentUser = result.user || null;
+
+        closeAuthDialog();
+        renderAccountPanel();
+
+        showToast(
+          "Logged in successfully."
         );
       }
 
@@ -1307,82 +1322,17 @@
     }
   }
 
-  async function registerAccount(
-    email,
-    password,
-    name
-  ) {
-    const result =
-      await auth.createUserWithEmailAndPassword(
-        email,
-        password
-      );
-
-    if (
-      name &&
-      result.user
-    ) {
-      await result.user.updateProfile({
-        displayName: name
-      });
-    }
-
-    if (result.user) {
-      try {
-        await result.user.sendEmailVerification();
-      } catch (verificationError) {
-        console.error(
-          "Verification email error:",
-          verificationError
-        );
-      }
-    }
-
-    currentUser = result.user || null;
-
-    closeAuthDialog();
-    renderAccountPanel();
-
-    showToast(
-      "Account created successfully."
-    );
-  }
-
-  async function loginAccount(
-    email,
-    password
-  ) {
-    const result =
-      await auth.signInWithEmailAndPassword(
-        email,
-        password
-      );
-
-    currentUser = result.user || null;
-
-    closeAuthDialog();
-    renderAccountPanel();
-
-    showToast(
-      "Logged in successfully."
-    );
-  }
-
   /* ==========================================
      PASSWORD RESET
      ========================================== */
 
   async function sendPasswordReset() {
+    if (authBusy) return;
+
     if (!auth) {
       showAuthMessage(
-        "Firebase is not ready. Please refresh the app."
+        "Firebase is not ready. Refresh the app."
       );
-      return;
-    }
-
-    if (currentAuthMode !== "forgot") {
-      currentAuthMode = "forgot";
-      updateAuthDialog();
       return;
     }
 
@@ -1402,8 +1352,8 @@
       return;
     }
 
-    setAuthBusy(true);
     clearAuthMessage();
+    setAuthBusy(true);
 
     try {
       await auth.sendPasswordResetEmail(email);
@@ -1434,9 +1384,7 @@
 
   async function sendVerificationEmail() {
     if (!auth || !auth.currentUser) {
-      showToast(
-        "Please log in first."
-      );
+      showToast("Please log in first.");
       return;
     }
 
@@ -1504,11 +1452,6 @@
   function start() {
     injectStyles();
 
-    /*
-      Create the modal even if the drawer
-      has not been initialized yet.
-    */
-
     ensureAuthDialog();
 
     initFirebase();
@@ -1516,9 +1459,8 @@
     renderAccountPanel();
 
     /*
-      Some app layouts create the drawer
-      dynamically. Observe the page so the
-      account panel can be inserted later.
+      Wait for the drawer if the main app
+      creates it after this script loads.
     */
 
     const observer = new MutationObserver(
@@ -1552,8 +1494,6 @@
     openAuthDialog: openAuthDialog,
     closeAuthDialog: closeAuthDialog,
     signInWithGoogle: signInWithGoogle,
-    registerAccount: registerAccount,
-    loginAccount: loginAccount,
     sendPasswordReset: sendPasswordReset,
     sendVerificationEmail: sendVerificationEmail,
     logout: logout,
@@ -1572,7 +1512,7 @@
   };
 
   /* ==========================================
-     INITIALIZE AFTER HTML IS AVAILABLE
+     INITIALIZE
      ========================================== */
 
   if (document.readyState === "loading") {
