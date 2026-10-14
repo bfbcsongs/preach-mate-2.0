@@ -6,17 +6,22 @@
 <meta name="theme-color" content="#111827">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Preach Mate</title>
 <link rel="stylesheet" href="./style.css">
+
+<title>Preach Mate</title>
 </head>
+
 <body>
 <div id="app">
+
   <header class="topbar">
     <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
+
     <div class="brand-wrap" id="topbarBrand" title="Tap 5 times to change logo">
       <div>
         <div class="brand">POTTER'S HOUSE</div>
@@ -24,6 +29,7 @@
       </div>
       <img id="topbarLogo" class="brand-logo hidden" alt="Church logo">
     </div>
+
     <button class="icon-btn" id="btnFavorites" title="Favorites" aria-label="Favorites">☆</button>
   </header>
 
@@ -36,6 +42,7 @@
   <main class="home-content">
     <div class="section-heading" id="notesCount">Your notes</div>
     <div class="notes-grid" id="notesGrid"></div>
+
     <div class="empty-state hidden" id="emptyState">
       <div style="font-size:38px;margin-bottom:8px">📝</div>
       <strong>No notes found</strong>
@@ -48,6 +55,7 @@
 
 <div class="drawer-backdrop hidden" id="drawerBackdrop">
   <aside class="drawer">
+
     <div class="drawer-brand-row" id="drawerBrand" title="Tap 5 times to change logo">
       <div class="drawer-title">
         POTTER'S HOUSE
@@ -67,16 +75,21 @@
 
     <button class="drawer-item" id="drawerExport">↗ &nbsp; Backup Notes</button>
     <button class="drawer-item" id="drawerRestore">↙ &nbsp; Restore Backup</button>
+
     <div class="drawer-footer">Notes are saved on this device.</div>
   </aside>
 </div>
 
 <section class="editor-screen hidden" id="editorScreen">
+
   <header class="editor-header">
     <button class="icon-btn" id="btnBack" title="Back" aria-label="Back">‹</button>
+
     <input class="editor-title" id="noteTitle" placeholder="Note title" maxlength="180" aria-label="Note title">
+
     <span class="mode-label" id="modeLabel">READ</span>
     <span class="save-status saved" id="saveStatus" role="status" aria-live="polite">✓ Saved</span>
+
     <button class="icon-btn" id="btnCopy" title="Copy note" aria-label="Copy note">▣</button>
     <button class="icon-btn" id="btnMenu" title="More options" aria-label="More options">⋮</button>
   </header>
@@ -90,6 +103,7 @@
     <button class="menu-item" id="menuFavorite">☆ Favorite</button>
     <button class="menu-item danger" id="menuDelete">Delete Note</button>
   </div>
+
 </section>
 
 <div class="editor-toolbar hidden" id="editorToolbar">
@@ -115,7 +129,9 @@
 <div class="dialog-backdrop hidden" id="dialogBackdrop">
   <div class="dialog" role="dialog" aria-modal="true">
     <h3 id="dialogTitle">Add Category</h3>
+
     <div id="dialogContent"></div>
+
     <div class="dialog-actions">
       <button class="btn" id="dialogCancel">Cancel</button>
       <button class="btn primary" id="dialogConfirm">Save</button>
@@ -128,23 +144,16 @@
 <input type="file" id="logoFileInput" accept="image/*" class="hidden">
 <input type="file" id="restoreFileInput" accept=".json,application/json" class="hidden">
 
-<!-- Firebase SDK -->
+<!-- Firebase SDK: load each library only once -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 
-<!-- Preach Mate Firebase Authentication -->
+<!-- Firebase Authentication: load only once -->
 <script src="./firebase-auth.js" defer></script>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
-
-<!-- Firebase Authentication -->
-<script src="./firebase-auth.js" defer></script>
-
-<!-- Existing app -->
+<!-- Main Preach Mate application -->
 <script src="./app.js" defer></script>
+
 </body>
 </html>
