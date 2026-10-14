@@ -390,73 +390,7 @@ function renderDrawerCategories(){
     holder.appendChild(b);
   });
 }
-/* PRESS-AND-HOLD CATEGORY DRAGGING (MULTI-JUMP & NO SCROLL) */
-function attachCategoryDrag(button, surface) {
-  const isTabs = surface === "tabs";
-  const container = isTabs ? $("categoryTabs") : $("drawerCategories");
-  const selector = isTabs ? ".category-tab[data-category]" : ".drawer-category[data-category]";
-  const axis = isTabs ? "x" : "y";
-  
-  let pressTimer = null;
-  let isDragging = false;
 
-  const startPress = (e) => {
-    if (e.button !== 0 && e.pointerType === "mouse") return;
-    if (button.dataset.category === "All Notes") return;
-
-    isDragging = false;
-
-    pressTimer = setTimeout(() => {
-      isDragging = true;
-      button.classList.add("dragging");
-      button.style.touchAction = "none"; // Stop browser scrolling
-
-      if (navigator.vibrate) navigator.vibrate(40);
-
-      dragInfo = {
-        button,
-        container,
-        selector,
-        axis,
-        surface,
-        pointerId: e.pointerId,
-        startX: e.clientX,
-        startY: e.clientY
-      };
-
-      try {
-        button.setPointerCapture(e.pointerId);
-      } catch (err) {}
-    }, 250); // Quick 250ms hold trigger
-  };
-
-  const movePress = (e) => {
-    if (!isDragging) {
-      if (dragInfo && Math.hypot(e.clientX - dragInfo.startX, e.clientY - dragInfo.startY) > 10) {
-        clearTimeout(pressTimer);
-      }
-      return;
-    }
-
-    if (e.cancelable) e.preventDefault();
-
-    // Multi-jump coordinate scanning across all items
-    const clientCoord = axis === "x" ? e.clientX : e.clientY;
-    const items = [...container.querySelectorAll(selector)].filter(el => el !== button);
-    
-    let targetNode = null;
-    for (const item of items) {
-      const rect = item.getBoundingClientRect();
-      const center = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
-      if (clientCoord < center) {
-        targetNode = item;
-        break;
-      }
-    }
-
-    container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
-
-    if (targetNode) {
 /* CLEAN & STABLE CATEGORY DRAGGING (NO SCREEN SWIPING) */
 function attachCategoryDrag(button, surface) {
   const isTabs = surface === "tabs";
@@ -468,7 +402,6 @@ function attachCategoryDrag(button, surface) {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (button.dataset.category === "All Notes") return;
     
-    // In the drawer, only allow dragging if touching the drag handle (⠿)
     if (!isTabs && !e.target.closest(".cat-drag-handle")) return;
 
     dragInfo = {
@@ -498,12 +431,11 @@ function attachCategoryDrag(button, surface) {
 
     if (!dragInfo.moved) {
       if (Math.abs(primary) < 6) return;
-      if (Math.abs(primary) < Math.abs(secondary)) return; // Let user scroll if scrolling vertically
+      if (Math.abs(primary) < Math.abs(secondary)) return;
       dragInfo.moved = true;
       button.classList.add("dragging");
     }
 
-    // Stop page scrolling completely once dragging starts
     if (e.cancelable) e.preventDefault();
 
     const underPointer = document.elementFromPoint(e.clientX, e.clientY);
