@@ -112,16 +112,58 @@ input,button,select,textarea{font-size:16px}
   .home-content{padding-left:22px;padding-right:22px}
 }
 @media(max-width:360px){
-  .topbar{gap:4px;padding-left:7px;padding-right:7px}
-  .brand{font-size:18px}
-  .notes-grid{gap:7px}
-  .note-card{padding:10px;height:205px;min-height:205px}
-  .note-card-title{font-size:14px}
-  .note-card-preview{font-size:12px}
-  .editor-header{gap:1px;padding-left:3px;padding-right:3px}
-  .editor-header .icon-btn{width:35px}
-  .mode-label{font-size:9px}
-  .save-status{min-width:38px;max-width:45px;font-size:8px;padding-left:1px;padding-right:1px}
+  /* GREEN TINTED LIVE LIGHTS TOPBAR */
+.topbar {
+  gap: 4px;
+  padding-left: 7px;
+  padding-right: 7px;
+  background: #f0fdf4; /* Soft green tint base */
+  display: flex;
+  align-items: center;
+  min-height: 58px;
+  flex-shrink: 0;
+  padding-top: max(8px, env(safe-area-inset-top));
+  position: relative;
+  
+  /* Static light green bottom border */
+  border-bottom: 1.5px solid #bbf7d0;
+}
+
+/* Pseudo-element for smooth green GPU glow layer */
+.topbar::after {
+  content: "";
+  position: absolute;
+  bottom: -1.5px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: #16a34a; /* Vibrant emerald green */
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.5); /* Soft ambient green glow */
+  pointer-events: none;
+  
+  /* Animates ONLY opacity (0% CPU/Memory impact) */
+  animation: greenLightGlow 3s infinite alternate ease-in-out;
+  will-change: opacity;
+}
+
+/* Deep forest green text and icons for high contrast */
+.topbar .brand {
+  font-size: 18px;
+  color: #14532d; /* Deep forest green title */
+}
+
+.topbar .icon-btn {
+  color: #15803d; /* Clean green icon buttons */
+}
+
+/* GPU-ACCELERATED GREEN GLOW ANIMATION */
+@keyframes greenLightGlow {
+  0% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 /* COMPACT DRAWER ACCOUNT BAR (LOCKED SIZE) */
 .drawer-account-bar {
