@@ -30,7 +30,9 @@
 
   function initFirebase() {
     if (!window.firebase) {
-      console.error("Preach Mate: Firebase SDK failed to load.");
+      console.error(
+        "Preach Mate: Firebase SDK failed to load."
+      );
 
       showToast(
         "Hindi nag-load ang Firebase. Tingnan ang internet connection."
@@ -52,32 +54,6 @@
         renderAccountPanel();
       });
 
-      /*
-       * Check the result after Google redirects back
-       * to the Preach Mate application.
-       */
-
-      auth.getRedirectResult()
-        .then(result => {
-          if (result && result.user) {
-            currentUser = result.user;
-
-            renderAccountPanel();
-
-            showToast(
-              "Welcome to Preach Mate!"
-            );
-          }
-        })
-        .catch(error => {
-          console.error(
-            "Google Sign-In redirect error:",
-            error
-          );
-
-          showToast(getFriendlyError(error));
-        });
-
       renderAccountPanel();
 
     } catch (error) {
@@ -86,7 +62,9 @@
         error
       );
 
-      showToast("Hindi makakonekta sa Firebase.");
+      showToast(
+        "Hindi makakonekta sa Firebase."
+      );
     }
   }
 
@@ -139,6 +117,7 @@
         color: #374151;
         overflow-wrap: anywhere;
         line-height: 1.5;
+        white-space: pre-line;
         margin-bottom: 10px;
       }
 
@@ -156,6 +135,7 @@
         font-weight: 700;
         text-align: center;
         cursor: pointer;
+        box-sizing: border-box;
       }
 
       .pm-account-btn.primary {
@@ -196,6 +176,7 @@
         justify-content: center;
         padding: 18px;
         background: rgba(0,0,0,.58);
+        box-sizing: border-box;
       }
 
       .pm-auth-dialog {
@@ -208,6 +189,7 @@
         background: #fff;
         color: #111827;
         box-shadow: 0 15px 45px rgba(0,0,0,.25);
+        box-sizing: border-box;
       }
 
       .pm-auth-dialog h2 {
@@ -267,6 +249,7 @@
         font-size: 12px;
         font-weight: 700;
         padding: 8px 4px;
+        cursor: pointer;
       }
 
       .pm-auth-error {
@@ -301,6 +284,7 @@
 
       .pm-auth-actions button {
         flex: 1;
+        min-width: 0;
         min-height: 44px;
         padding: 10px;
         border: 1px solid #d1d5db;
@@ -309,6 +293,7 @@
         color: #111827;
         font-size: 14px;
         font-weight: 700;
+        cursor: pointer;
       }
 
       .pm-auth-actions button.primary {
@@ -331,6 +316,7 @@
         color: #2563eb;
         font-size: 13px;
         text-align: left;
+        cursor: pointer;
       }
 
       .pm-auth-google {
@@ -349,6 +335,7 @@
         font-size: 14px;
         font-weight: 700;
         cursor: pointer;
+        box-sizing: border-box;
       }
 
       .pm-auth-google:disabled {
@@ -394,6 +381,7 @@
         line-height: 1.5;
         text-align: center;
         box-shadow: 0 4px 15px #0003;
+        box-sizing: border-box;
       }
     `;
 
@@ -492,11 +480,11 @@
     const email = document.createElement("div");
 
     email.className = "pm-account-email";
-    email.textContent =
-      currentUser.displayName
-        ? currentUser.displayName + "\n" +
-          (currentUser.email || "")
-        : currentUser.email || "Account";
+
+    email.textContent = currentUser.displayName
+      ? currentUser.displayName + "\n" +
+        (currentUser.email || "")
+      : currentUser.email || "Account";
 
     panel.appendChild(email);
 
@@ -610,64 +598,66 @@
      ========================================== */
 
   async function signInWithGoogle() {
-  async function signInWithGoogle() {
-  if (!auth || !firebaseReady) {
-    showToast("Hindi pa handa ang Firebase.");
-    return;
-  }
+    if (!auth || !firebaseReady) {
+      showToast("Hindi pa handa ang Firebase.");
+      return;
+    }
 
-  if (googleSigningIn) return;
+    if (googleSigningIn) return;
 
-  googleSigningIn = true;
+    googleSigningIn = true;
 
-  const buttons = [
-    $("pmAuthGoogle"),
-    ...document.querySelectorAll(
-      "#pmAccountPanel button.google"
-    )
-  ].filter(Boolean);
-
-  buttons.forEach(button => {
-    button.disabled = true;
-  });
-
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-
-    provider.setCustomParameters({
-      prompt: "select_account"
-    });
-
-    const result = await auth.signInWithPopup(provider);
-
-    currentUser = result.user;
-
-    renderAccountPanel();
-    closeAuthDialog();
-
-    showToast("Welcome to Preach Mate!");
-
-  } catch (error) {
-    console.error(
-      "Google Sign-In error code:",
-      error.code
-    );
-
-    console.error(
-      "Google Sign-In error details:",
-      error
-    );
-
-    showToast(getFriendlyError(error));
-
-  } finally {
-    googleSigningIn = false;
+    const buttons = [
+      $("pmAuthGoogle"),
+      ...document.querySelectorAll(
+        "#pmAccountPanel button.google"
+      )
+    ].filter(Boolean);
 
     buttons.forEach(button => {
-      button.disabled = false;
+      button.disabled = true;
     });
+
+    try {
+      const provider =
+        new firebase.auth.GoogleAuthProvider();
+
+      provider.setCustomParameters({
+        prompt: "select_account"
+      });
+
+      const result =
+        await auth.signInWithPopup(provider);
+
+      currentUser = result.user;
+
+      renderAccountPanel();
+      closeAuthDialog();
+
+      showToast("Welcome to Preach Mate!");
+
+    } catch (error) {
+      console.error(
+        "Google Sign-In error code:",
+        error.code
+      );
+
+      console.error(
+        "Google Sign-In error details:",
+        error
+      );
+
+      showToast(getFriendlyError(error));
+
+    } finally {
+      googleSigningIn = false;
+
+      buttons.forEach(button => {
+        button.disabled = false;
+      });
+    }
   }
-}
+
   /* ==========================================
      AUTHENTICATION FORM
      ========================================== */
@@ -850,7 +840,10 @@
         const password = $("pmAuthPassword").value;
 
         if (!email) {
-          showAuthError("Ilagay ang email address.");
+          showAuthError(
+            "Ilagay ang email address."
+          );
+
           return;
         }
 
@@ -892,7 +885,9 @@
             error
           );
 
-          showAuthError(getFriendlyError(error));
+          showAuthError(
+            getFriendlyError(error)
+          );
 
         } finally {
           const button = $("pmAuthSubmit");
@@ -901,7 +896,9 @@
             button.disabled = false;
 
             button.textContent =
-              isRegister ? "Create Account" : "Login";
+              isRegister
+                ? "Create Account"
+                : "Login";
           }
         }
       }
@@ -927,10 +924,15 @@
      ========================================== */
 
   async function registerAccount(email, password) {
-    const result = await auth.createUserWithEmailAndPassword(
-      email,
-      password
-    );
+    const result =
+      await auth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+
+    currentUser = result.user;
+
+    renderAccountPanel();
 
     try {
       await result.user.sendEmailVerification();
@@ -943,8 +945,6 @@
 
       showToast("Verification email sent!");
 
-      renderAccountPanel();
-
     } catch (error) {
       console.error(
         "Verification email error:",
@@ -955,8 +955,6 @@
         "Account created, but the verification email could not be sent. " +
         getFriendlyError(error)
       );
-
-      renderAccountPanel();
     }
   }
 
@@ -965,10 +963,11 @@
      ========================================== */
 
   async function loginAccount(email, password) {
-    const result = await auth.signInWithEmailAndPassword(
-      email,
-      password
-    );
+    const result =
+      await auth.signInWithEmailAndPassword(
+        email,
+        password
+      );
 
     await result.user.reload();
 
@@ -1017,7 +1016,9 @@
 
       await currentUser.sendEmailVerification();
 
-      showToast("Bagong verification email ang ipinadala.");
+      showToast(
+        "Bagong verification email ang ipinadala."
+      );
 
       renderAccountPanel();
 
@@ -1049,7 +1050,9 @@
       renderAccountPanel();
 
       if (currentUser.emailVerified) {
-        showToast("✓ Email verified successfully!");
+        showToast(
+          "✓ Email verified successfully!"
+        );
       } else {
         showToast(
           "Hindi pa verified. Buksan ang verification link sa email mo."
@@ -1086,7 +1089,9 @@
         "Ilagay muna ang email address para makapagpadala ng reset link."
       );
 
-      if (emailInput) emailInput.focus();
+      if (emailInput) {
+        emailInput.focus();
+      }
 
       return;
     }
@@ -1098,7 +1103,9 @@
         "Kung rehistrado ang email address na ito, makakatanggap ka ng password reset instructions."
       );
 
-      showToast("Password reset request submitted.");
+      showToast(
+        "Password reset request submitted."
+      );
 
     } catch (error) {
       console.error(
@@ -1106,7 +1113,9 @@
         error
       );
 
-      showAuthError(getFriendlyError(error));
+      showAuthError(
+        getFriendlyError(error)
+      );
     }
   }
 
@@ -1117,7 +1126,11 @@
   async function logout() {
     if (!auth) return;
 
-    if (!window.confirm("Mag-logout sa Preach Mate account?")) {
+    if (
+      !window.confirm(
+        "Mag-logout sa Preach Mate account?"
+      )
+    ) {
       return;
     }
 
@@ -1128,10 +1141,15 @@
 
       renderAccountPanel();
 
-      showToast("Logged out successfully.");
+      showToast(
+        "Logged out successfully."
+      );
 
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error(
+        "Logout error:",
+        error
+      );
 
       showToast(getFriendlyError(error));
     }
@@ -1169,7 +1187,9 @@
 
     const info = $("pmAuthInfo");
 
-    if (info) info.style.display = "none";
+    if (info) {
+      info.style.display = "none";
+    }
   }
 
   function showAuthInfo(message) {
@@ -1185,7 +1205,9 @@
 
     const error = $("pmAuthError");
 
-    if (error) error.style.display = "none";
+    if (error) {
+      error.style.display = "none";
+    }
   }
 
   function closeAuthDialog() {
@@ -1241,7 +1263,10 @@
         "Hindi authorized ang domain na ito. Idagdag ang domain ng Preach Mate sa Firebase Authentication > Settings > Authorized domains.",
 
       "auth/popup-blocked":
-        "Na-block ang Google sign-in popup. Subukan muli.",
+        "Na-block ang Google sign-in popup. Payagan ang popup at subukan muli.",
+
+      "auth/popup-closed-by-user":
+        "Isinara ang Google sign-in window bago matapos ang login.",
 
       "auth/operation-not-supported-in-this-environment":
         "Hindi suportado ang sign-in sa environment na ito. Buksan ang Preach Mate sa supported browser.",
@@ -1253,7 +1278,16 @@
         "Hindi available ang browser storage. Buksan ang Preach Mate sa supported browser.",
 
       "auth/cancelled-popup-request":
-        "Nakansela ang sign-in request. Subukan muli."
+        "Nakansela ang sign-in request. Subukan muli.",
+
+      "auth/argument-error":
+        "May invalid na argument sa Firebase Sign-In. Tingnan ang browser console para sa eksaktong detalye.",
+
+      "auth/credential-already-in-use":
+        "Ang Google account na ito ay naka-link na sa ibang account.",
+
+      "auth/network-request-failed":
+        "Walang koneksyon. Tingnan ang internet connection."
     };
 
     return messages[error && error.code] ||
@@ -1311,16 +1345,21 @@
         renderAccountPanel();
       }
 
-      if ($("pmAccountPanel") || attempts >= 20) {
+      if (
+        $("pmAccountPanel") ||
+        attempts >= 20
+      ) {
         clearInterval(timer);
       }
     }, 500);
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start, {
-      once: true
-    });
+    document.addEventListener(
+      "DOMContentLoaded",
+      start,
+      { once: true }
+    );
   } else {
     start();
   }
