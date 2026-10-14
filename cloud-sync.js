@@ -203,13 +203,29 @@
       );
     }
 
-    // --- CRITICAL FIX FOR EXTRACTING CLOUD LOGO ---
-    const logo = typeof settings.logo === "string" ? settings.logo : "";
+    // Safely extract Base64 logo string or empty fallback
+    const logo = typeof settings.logo === "string" && settings.logo.startsWith("data:image/")
+      ? settings.logo 
+      : "";
 
     app.applyCloudData({
       notes,
       categories,
       logo
+    });
+
+    // Force DOM elements to render the restored logo after layout settles
+    requestAnimationFrame(() => {
+      try {
+        const savedLogo = localStorage.getItem(LOGO_KEY);
+        ["topbarLogo", "drawerLogo"].forEach(id => {
+          const img = document.getElementById(id);
+          if (img && savedLogo) {
+            img.src = savedLogo;
+            img.classList.remove("hidden");
+          }
+        });
+      } catch (e) {}
     });
 
     lastSnapshot = makeSnapshot();
@@ -281,9 +297,14 @@
       throw new Error("Account changed during sync.");
     }
 
+    // Preserve valid Base64 image payload during sync
+    const logoToUpload = typeof data.logo === "string" && data.logo.startsWith("data:image/")
+      ? data.logo
+      : "";
+
     await settingsRef.set({
       categories,
-      logo: data.logo || "",
+      logo: logoToUpload,
       initialized: true,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
