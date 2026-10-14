@@ -1587,4 +1587,44 @@ window.purgeCorruptedNote = async function() {
   alert(`Successfully purged ${corruptNotes.length} corrupted note(s)! Reloading...`);
   location.reload();
 };
+/* EMERGENCY PURGE BUTTON FOR CORRUPTED NOTES */
+window.purgeCorruptedNote = async function() {
+  const user = window.PreachMateFirebase?.getCurrentUser();
+  const db = window.PreachMateFirebase?.getFirestore();
+
+  let localNotes = JSON.parse(localStorage.getItem("notepal_notes_v2") || "[]");
+  
+  // Identify notes with raw markers or corrupted HTML structure
+  const corruptNotes = localNotes.filter(n => 
+    n.content.includes("read-word-marker") || 
+    n.content.includes("class=") || 
+    n.title === "" || 
+    n.title === "Untitled note"
+  );
+  
+  if (corruptNotes.length === 0) {
+    alert("No corrupted notes found!");
+    return;
+  }
+
+  // Delete from Firebase Cloud
+  if (user && db) {
+    for (const note of corruptNotes) {
+      try {
+        await db.collection("users").doc(user.uid).collection("notes").doc(note.id).delete();
+      } catch (e) {
+        console.error("Cloud deletion failed:", e);
+      }
+    }
+  }
+
+  // Delete locally and reload app
+  const cleanNotes = localNotes.filter(n => !corruptNotes.some(cn => cn.id === n.id));
+  localStorage.setItem("notepal_notes_v2", JSON.stringify(cleanNotes));
+
+  alert(`Successfully purged ${corruptNotes.length} corrupted note(s)! Reloading...`);
+  location.reload();
+};
+
 })();
+
