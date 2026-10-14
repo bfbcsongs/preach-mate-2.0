@@ -391,7 +391,7 @@ function renderDrawerCategories(){
   });
 }
 
-/* CLEAN & STABLE CATEGORY DRAGGING (NO SCREEN SWIPING) */
+/* SAFE & RELIABLE CATEGORY DRAGGING */
 function attachCategoryDrag(button, surface) {
   const isTabs = surface === "tabs";
   const container = isTabs ? $("categoryTabs") : $("drawerCategories");
@@ -401,7 +401,8 @@ function attachCategoryDrag(button, surface) {
   button.addEventListener("pointerdown", e => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (button.dataset.category === "All Notes") return;
-    
+
+    // In the side drawer, only enable dragging when explicitly holding the handle (⠿)
     if (!isTabs && !e.target.closest(".cat-drag-handle")) return;
 
     dragInfo = {
@@ -409,16 +410,11 @@ function attachCategoryDrag(button, surface) {
       container,
       selector,
       axis,
-      surface,
       pointerId: e.pointerId,
       startX: e.clientX,
       startY: e.clientY,
       moved: false
     };
-
-    try {
-      button.setPointerCapture(e.pointerId);
-    } catch (err) {}
   });
 
   button.addEventListener("pointermove", e => {
@@ -426,14 +422,14 @@ function attachCategoryDrag(button, surface) {
 
     const dx = e.clientX - dragInfo.startX;
     const dy = e.clientY - dragInfo.startY;
-    const primary = axis === "x" ? dx : dy;
-    const secondary = axis === "x" ? dy : dx;
+    const distance = axis === "x" ? Math.abs(dx) : Math.abs(dy);
 
+    // Require intentional drag distance before activating drag mode
     if (!dragInfo.moved) {
-      if (Math.abs(primary) < 6) return;
-      if (Math.abs(primary) < Math.abs(secondary)) return;
+      if (distance < 12) return;
       dragInfo.moved = true;
       button.classList.add("dragging");
+      try { button.setPointerCapture(e.pointerId); } catch (err) {}
     }
 
     if (e.cancelable) e.preventDefault();
@@ -442,9 +438,6 @@ function attachCategoryDrag(button, surface) {
     const target = underPointer ? underPointer.closest(selector) : null;
 
     if (!target || target === button || target.dataset.category === "All Notes" || target.parentElement !== container) return;
-
-    container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
-    target.classList.add("drag-target");
 
     const rect = target.getBoundingClientRect();
     const before = axis === "x" ? e.clientX < rect.left + rect.width / 2 : e.clientY < rect.top + rect.height / 2;
@@ -457,13 +450,11 @@ function attachCategoryDrag(button, surface) {
   });
 
   const finishDrag = e => {
-    if (!dragInfo || dragInfo.button !== button || dragInfo.pointerId !== e.pointerId) return;
+    if (!dragInfo || dragInfo.button !== button) return;
 
-    const moved = dragInfo.moved;
-    button.classList.remove("dragging");
-    container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
+    if (dragInfo.moved) {
+      button.classList.remove("dragging");
 
-    if (moved) {
       const reordered = [...container.querySelectorAll(selector)]
         .map(el => el.dataset.category)
         .filter(cat => cat && cat !== "All Notes");
@@ -477,7 +468,7 @@ function attachCategoryDrag(button, surface) {
       renderNotes();
       showToast("Category order saved");
 
-      setTimeout(() => { suppressCategoryClick = false; }, 350);
+      setTimeout(() => { suppressCategoryClick = false; }, 300);
     }
 
     dragInfo = null;
@@ -485,8 +476,8 @@ function attachCategoryDrag(button, surface) {
 
   button.addEventListener("pointerup", finishDrag);
   button.addEventListener("pointercancel", finishDrag);
-  button.addEventListener("lostpointercapture", finishDrag);
 }
+
 
 /* NOTES LIST */
 function renderNotes(){
