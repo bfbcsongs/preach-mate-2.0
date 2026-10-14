@@ -1553,4 +1553,38 @@ appStartupPromise
     console.error("Preach Mate initialization failed:", error);
   });
 
+  /* EMERGENCY PURGE BUTTON FOR CORRUPTED NOTES */
+window.purgeCorruptedNote = async function() {
+  const user = window.PreachMateFirebase?.getCurrentUser();
+  const db = window.PreachMateFirebase?.getFirestore();
+
+  // 1. Clean local notes
+  let localNotes = JSON.parse(localStorage.getItem("notepal_notes_v2") || "[]");
+  
+  // Identify corrupted notes (contains HTML attributes or unparsed tags)
+  const corruptNotes = localNotes.filter(n => n.content.includes("read-word-marker") || n.content.includes("class=") || n.title === "Untitled note");
+  
+  if (corruptNotes.length === 0) {
+    alert("No corrupted notes found!");
+    return;
+  }
+
+  // 2. Delete corrupted notes from Firebase Cloud
+  if (user && db) {
+    for (const note of corruptNotes) {
+      try {
+        await db.collection("users").doc(user.uid).collection("notes").doc(note.id).delete();
+      } catch (e) {
+        console.error("Failed to delete note from cloud:", e);
+      }
+    }
+  }
+
+  // 3. Save clean list back to LocalStorage
+  const cleanNotes = localNotes.filter(n => !corruptNotes.some(cn => cn.id === n.id));
+  localStorage.setItem("notepal_notes_v2", JSON.stringify(cleanNotes));
+
+  alert(`Successfully purged ${corruptNotes.length} corrupted note(s)! Reloading...`);
+  location.reload();
+};
 })();
