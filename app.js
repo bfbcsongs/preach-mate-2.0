@@ -390,66 +390,111 @@ function renderDrawerCategories(){
     holder.appendChild(b);
   });
 }
-function attachCategoryDrag(button,surface){
-  const isTabs=surface==="tabs";
-  const container=isTabs?$("categoryTabs"):$("drawerCategories");
-  const selector=isTabs?".category-tab[data-category]":".drawer-category[data-category]";
-  const axis=isTabs?"x":"y";
-  button.addEventListener("pointerdown",e=>{
-    if(e.button!==0&&e.pointerType==="mouse")return;
-    if(button.dataset.category==="All Notes")return;
-    if(!isTabs&&!e.target.closest(".cat-drag-handle"))return;
-    dragInfo={button,container,selector,axis,surface,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false};
-    try{button.setPointerCapture(e.pointerId)}catch(err){}
-  });
-  button.addEventListener("pointermove",e=>{
-    if(!dragInfo||dragInfo.button!==button||dragInfo.pointerId!==e.pointerId)return;
-    const dx=e.clientX-dragInfo.startX,dy=e.clientY-dragInfo.startY;
-    const primary=axis==="x"?dx:dy,secondary=axis==="x"?dy:dx;
-    if(!dragInfo.moved){
-      if(Math.abs(primary)<8)return;
-      if(Math.abs(primary)<Math.abs(secondary))return;
-      dragInfo.moved=true;
+/* PRESS-AND-HOLD CATEGORY DRAGGING */
+function attachCategoryDrag(button, surface) {
+  const isTabs = surface === "tabs";
+  const container = isTabs ? $("categoryTabs") : $("drawerCategories");
+  const selector = isTabs ? ".category-tab[data-category]" : ".drawer-category[data-category]";
+  const axis = isTabs ? "x" : "y";
+  
+  let pressTimer = null;
+  let isDragging = false;
+
+  const startPress = (e) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    if (button.dataset.category === "All Notes") return;
+
+    // Reset drag state
+    isDragging = false;
+
+    // Start a 300ms press-and-hold timer
+    pressTimer = setTimeout(() => {
+      isDragging = true;
       button.classList.add("dragging");
+
+      // Optional subtle haptic feedback on mobile
+      if (navigator.vibrate) navigator.vibrate(40);
+
+      dragInfo = {
+        button,
+        container,
+        selector,
+        axis,
+        surface,
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY
+      };
+
+      try {
+        button.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    }, 300); // 300ms hold duration
+  };
+
+  const movePress = (e) => {
+    // If moved before 300ms, cancel press-and-hold so normal clicking/scrolling works
+    if (!isDragging) {
+      if (dragInfo && Math.hypot(e.clientX - dragInfo.startX, e.clientY - dragInfo.startY) > 10) {
+        clearTimeout(pressTimer);
+      }
+      return;
     }
-    if(e.cancelable)e.preventDefault();
-    const underPointer=document.elementFromPoint(e.clientX,e.clientY);
-    const target=underPointer?underPointer.closest(selector):null;
-    if(!target||target===button||target.dataset.category==="All Notes"||target.parentElement!==container)return;
-    container.querySelectorAll(".drag-target").forEach(el=>el.classList.remove("drag-target"));
+
+    if (e.cancelable) e.preventDefault();
+
+    const underPointer = document.elementFromPoint(e.clientX, e.clientY);
+    const target = underPointer ? underPointer.closest(selector) : null;
+
+    if (!target || target === button || target.dataset.category === "All Notes" || target.parentElement !== container) return;
+
+    container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
     target.classList.add("drag-target");
-    const rect=target.getBoundingClientRect();
-    const before=axis==="x"?e.clientX<rect.left+rect.width/2:e.clientY<rect.top+rect.height/2;
-    if(before){
-      if(button.nextElementSibling!==target)container.insertBefore(button,target);
-    }else if(target.nextElementSibling!==button){
-      container.insertBefore(button,target.nextElementSibling);
+
+    const rect = target.getBoundingClientRect();
+    const before = axis === "x" ? e.clientX < rect.left + rect.width / 2 : e.clientY < rect.top + rect.height / 2;
+
+    if (before) {
+      if (button.nextElementSibling !== target) container.insertBefore(button, target);
+    } else if (target.nextElementSibling !== button) {
+      container.insertBefore(button, target.nextElementSibling);
     }
-  });
-  const finish=e=>{
-    if(!dragInfo||dragInfo.button!==button||dragInfo.pointerId!==e.pointerId)return;
-    const moved=dragInfo.moved;
-    button.classList.remove("dragging");
-    container.querySelectorAll(".drag-target").forEach(el=>el.classList.remove("drag-target"));
-    if(moved){
-      const reordered=[...container.querySelectorAll(selector)].map(el=>el.dataset.category).filter(cat=>cat&&cat!=="All Notes");
-      const remaining=categories.filter(cat=>cat!=="All Notes"&&!reordered.includes(cat));
-      categories=["All Notes",...reordered,...remaining];
+  };
+
+  const endPress = (e) => {
+    clearTimeout(pressTimer);
+
+    if (isDragging) {
+      button.classList.remove("dragging");
+      container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
+
+      const reordered = [...container.querySelectorAll(selector)]
+        .map(el => el.dataset.category)
+        .filter(cat => cat && cat !== "All Notes");
+
+      const remaining = categories.filter(cat => cat !== "All Notes" && !reordered.includes(cat));
+      categories = ["All Notes", ...reordered, ...remaining];
+
       persist();
-      suppressCategoryClick=true;
+      suppressCategoryClick = true;
       renderCategories();
       renderNotes();
       showToast("Category order saved");
-      setTimeout(()=>{suppressCategoryClick=false},350);
+
+      setTimeout(() => { suppressCategoryClick = false; }, 350);
     }
-    dragInfo=null;
+
+    isDragging = false;
+    dragInfo = null;
   };
-  button.addEventListener("pointerup",finish);
-  button.addEventListener("pointercancel",finish);
-  button.addEventListener("lostpointercapture",e=>{
-    if(dragInfo&&dragInfo.button===button&&dragInfo.pointerId===e.pointerId)finish(e);
-  });
+
+  button.addEventListener("pointerdown", startPress);
+  button.addEventListener("pointermove", movePress);
+  button.addEventListener("pointerup", endPress);
+  button.addEventListener("pointercancel", endPress);
+  button.addEventListener("lostpointercapture", endPress);
 }
+
 
 /* NOTES LIST */
 function renderNotes(){
