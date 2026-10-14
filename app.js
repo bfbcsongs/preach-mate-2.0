@@ -1392,14 +1392,10 @@ window.addEventListener("beforeunload",()=>{
 
 /* CORRECTED STARTUP WITH INDEXEDDB RECOVERY */
 async function startApp(){
-  // Ask the browser to reduce automatic storage eviction where supported.
   requestPersistentStorage();
 
-  // Read the existing IndexedDB backup BEFORE saving current/default data.
   const backup=await readDurableBackup();
 
-  // Recover notes only if LocalStorage notes were absent or invalid.
-  // A valid empty array means the user intentionally has no notes.
   if(!notesWereStored&&backup&&Array.isArray(backup.notes)){
     notes=backup.notes.filter(n=>n&&typeof n==="object");
     notes.forEach(n=>{
@@ -1412,17 +1408,14 @@ async function startApp(){
     showToast("Notes recovered from device backup.");
   }
 
-  // Recover categories only when no valid categories were saved locally.
   if(!categoriesWereStored&&backup&&Array.isArray(backup.categories)&&backup.categories.length){
     categories=["All Notes",...backup.categories.filter(c=>typeof c==="string"&&c!=="All Notes")];
   }
 
-  // Restore the logo from IndexedDB if the logo key is missing.
   if(!safeStorageGet(LOGO_KEY)&&backup&&typeof backup.logo==="string"&&backup.logo.startsWith("data:image/")){
     safeStorageSet(LOGO_KEY,backup.logo);
   }
 
-  // Normalize categories and ensure every note has a valid category.
   categories=categories.filter(c=>typeof c==="string"&&c.trim()).map(c=>c.trim());
   categories=["All Notes",...categories.filter(c=>c!=="All Notes")];
   categories=[...new Set(categories)];
@@ -1436,7 +1429,6 @@ async function startApp(){
     if(typeof n.pinned!=="boolean")n.pinned=false;
   });
 
-  // Restore first, then render. Persist recovered data back to both stores.
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify(notes));
     localStorage.setItem(CATEGORIES_KEY,JSON.stringify(categories));
@@ -1447,7 +1439,6 @@ async function startApp(){
   applySavedLogo();
   updateInstallButton();
 
-  // Ensure the latest state is written to IndexedDB.
   await flushDurableBackup();
 }
 const appStartupPromise = startApp().catch(error => {
@@ -1500,11 +1491,12 @@ window.PreachMateApp = {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
       localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
 
+      // --- CRITICAL FIX FOR LOGO RESTORATION ---
       if (typeof data.logo === "string") {
         if (data.logo.startsWith("data:image/")) {
-          localStorage.setItem(LOGO_KEY, data.logo);
+          safeStorageSet(LOGO_KEY, data.logo);
         } else if (data.logo === "") {
-          localStorage.removeItem(LOGO_KEY);
+          try { localStorage.removeItem(LOGO_KEY); } catch(e){}
         }
       }
 
