@@ -390,7 +390,7 @@ function renderDrawerCategories(){
     holder.appendChild(b);
   });
 }
-/* PRESS-AND-HOLD CATEGORY DRAGGING */
+/* PRESS-AND-HOLD CATEGORY DRAGGING (MULTI-JUMP & NO SCROLL) */
 function attachCategoryDrag(button, surface) {
   const isTabs = surface === "tabs";
   const container = isTabs ? $("categoryTabs") : $("drawerCategories");
@@ -404,15 +404,13 @@ function attachCategoryDrag(button, surface) {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (button.dataset.category === "All Notes") return;
 
-    // Reset drag state
     isDragging = false;
 
-    // Start a 300ms press-and-hold timer
     pressTimer = setTimeout(() => {
       isDragging = true;
       button.classList.add("dragging");
+      button.style.touchAction = "none"; // Stop browser scrolling
 
-      // Optional subtle haptic feedback on mobile
       if (navigator.vibrate) navigator.vibrate(40);
 
       dragInfo = {
@@ -429,11 +427,10 @@ function attachCategoryDrag(button, surface) {
       try {
         button.setPointerCapture(e.pointerId);
       } catch (err) {}
-    }, 300); // 300ms hold duration
+    }, 250); // Quick 250ms hold trigger
   };
 
   const movePress = (e) => {
-    // If moved before 300ms, cancel press-and-hold so normal clicking/scrolling works
     if (!isDragging) {
       if (dragInfo && Math.hypot(e.clientX - dragInfo.startX, e.clientY - dragInfo.startY) > 10) {
         clearTimeout(pressTimer);
@@ -443,26 +440,37 @@ function attachCategoryDrag(button, surface) {
 
     if (e.cancelable) e.preventDefault();
 
-    const underPointer = document.elementFromPoint(e.clientX, e.clientY);
-    const target = underPointer ? underPointer.closest(selector) : null;
-
-    if (!target || target === button || target.dataset.category === "All Notes" || target.parentElement !== container) return;
+    // Multi-jump coordinate scanning across all items
+    const clientCoord = axis === "x" ? e.clientX : e.clientY;
+    const items = [...container.querySelectorAll(selector)].filter(el => el !== button);
+    
+    let targetNode = null;
+    for (const item of items) {
+      const rect = item.getBoundingClientRect();
+      const center = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
+      if (clientCoord < center) {
+        targetNode = item;
+        break;
+      }
+    }
 
     container.querySelectorAll(".drag-target").forEach(el => el.classList.remove("drag-target"));
-    target.classList.add("drag-target");
 
-    const rect = target.getBoundingClientRect();
-    const before = axis === "x" ? e.clientX < rect.left + rect.width / 2 : e.clientY < rect.top + rect.height / 2;
-
-    if (before) {
-      if (button.nextElementSibling !== target) container.insertBefore(button, target);
-    } else if (target.nextElementSibling !== button) {
-      container.insertBefore(button, target.nextElementSibling);
+    if (targetNode) {
+      targetNode.classList.add("drag-target");
+      container.insertBefore(button, targetNode);
+    } else {
+      // Drop at the end of the list
+      const lastItem = items[items.length - 1];
+      if (lastItem && lastItem !== button) {
+        container.appendChild(button);
+      }
     }
   };
 
   const endPress = (e) => {
     clearTimeout(pressTimer);
+    button.style.touchAction = "";
 
     if (isDragging) {
       button.classList.remove("dragging");
@@ -494,6 +502,7 @@ function attachCategoryDrag(button, surface) {
   button.addEventListener("pointercancel", endPress);
   button.addEventListener("lostpointercapture", endPress);
 }
+
 
 
 /* NOTES LIST */
