@@ -183,20 +183,6 @@
     };
   }
 
-  function saveLogoLocally(logo) {
-    try {
-      if (typeof logo === "string" && logo.startsWith("data:image/")) {
-        localStorage.setItem(LOGO_KEY, logo);
-      } else if (logo === "") {
-        localStorage.removeItem(LOGO_KEY);
-      }
-
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
   async function restoreCloud(uid, cloud) {
     if (getUser()?.uid !== uid) return;
 
@@ -209,10 +195,6 @@
 
     const notes = normalizeNotes(cloud.notes, categories);
 
-    /*
-     * Restore through app.js so its in-memory data and UI
-     * are updated without reloading the page.
-     */
     const app = window.PreachMateApp;
 
     if (!app || typeof app.applyCloudData !== "function") {
@@ -221,9 +203,8 @@
       );
     }
 
-    const logo = typeof settings.logo === "string"
-      ? settings.logo
-      : undefined;
+    // --- CRITICAL FIX FOR EXTRACTING CLOUD LOGO ---
+    const logo = typeof settings.logo === "string" ? settings.logo : "";
 
     app.applyCloudData({
       notes,
@@ -235,7 +216,7 @@
     cloudReady = true;
     lastErrorMessage = "";
 
-    console.log("Preach Mate: cloud backup restored.");
+    console.log("Preach Mate: cloud backup restored with logo.");
   }
 
   async function uploadLocal(uid) {
@@ -368,10 +349,6 @@
         return;
       }
 
-      /*
-       * First-time backup only. Never upload local defaults
-       * over an already initialized cloud backup.
-       */
       await uploadLocal(uid);
 
       if (generation !== authGeneration || getUser()?.uid !== uid) return;
@@ -407,7 +384,7 @@
     try {
       await uploadLocal(uid);
 
-      if (currentUid === uid && getUser()?.uid === uid) {
+      if (currentUid === uid && getUser()?.uid !== uid) {
         lastSnapshot = makeSnapshot();
       }
     } catch (error) {
