@@ -1169,7 +1169,27 @@ function schedulePasteTailScroll(){
     requestAnimationFrame(()=>requestAnimationFrame(positionPastedTail));
   },0);
 }
-noteBody.addEventListener("paste",schedulePasteTailScroll);
+/* PASTE SANITIZER TO PREVENT BROKEN HTML */
+noteBody.addEventListener("paste", (e) => {
+  e.preventDefault();
+  
+  // Extract clean plain text from clipboard
+  const plainText = (e.clipboardData || window.clipboardData).getData("text/plain");
+  
+  // Safely insert plain text into contenteditable
+  if (document.queryCommandSupported("insertText")) {
+    document.execCommand("insertText", false, plainText);
+  } else {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    selection.deleteFromDocument();
+    selection.getRangeAt(0).insertNode(document.createTextNode(plainText));
+  }
+  
+  // Re-trigger auto-scroll adjustments
+  schedulePasteTailScroll();
+});
+
 noteBody.addEventListener("input",scheduleTypingScroll);
 noteBody.addEventListener("keyup",scheduleTypingScroll);
 noteBody.addEventListener("click",scheduleTypingScroll);
