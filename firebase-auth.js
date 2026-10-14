@@ -1151,9 +1151,10 @@
         error
       );
 
-      showToast(getFriendlyError(error));
-    }
-  }
+      showToast(
+  (error.code || "unknown") + ": " +
+  (error.message || "No error details")
+);
 
   /* ==========================================
      FORM MESSAGES
