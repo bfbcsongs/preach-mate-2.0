@@ -56,15 +56,13 @@
 
       renderAccountPanel();
 
-    } catch (error) {
+        } catch (error) {
       console.error(
-        "Firebase initialization error:",
+        "Logout error:",
         error
       );
 
-      showToast(
-        "Hindi makakonekta sa Firebase."
-      );
+      showToast(getFriendlyError(error));
     }
   }
 
