@@ -1472,4 +1472,51 @@ if("serviceWorker" in navigator){
 }
 
 /* END OF PREACH MATE APP */
+  /* CLOUD SYNC BRIDGE */
+window.PreachMateApp = {
+  isReady: false,
+
+  getCloudData() {
+    return {
+      notes: JSON.parse(JSON.stringify(notes)),
+      categories: JSON.parse(JSON.stringify(categories)),
+      logo: safeStorageGet(LOGO_KEY) || ""
+    };
+  },
+
+  applyCloudData(data) {
+    if (
+      !data ||
+      !Array.isArray(data.notes) ||
+      !Array.isArray(data.categories)
+    ) {
+      throw new Error("Invalid cloud backup.");
+    }
+
+    notes = data.notes;
+    categories = data.categories;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+
+      if (typeof data.logo === "string") {
+        if (data.logo.startsWith("data:image/")) {
+          localStorage.setItem(LOGO_KEY, data.logo);
+        } else if (data.logo === "") {
+          localStorage.removeItem(LOGO_KEY);
+        }
+      }
+    } catch (error) {
+      throw new Error("Could not save restored cloud data locally.");
+    }
+
+    applySavedLogo();
+    renderCategories();
+    renderNotes();
+    flushDurableBackup();
+
+    return true;
+  }
+};
 })();
