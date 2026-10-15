@@ -113,14 +113,33 @@
 
       document.body.appendChild(banner);
 
-      document.getElementById("pm-do-update").onclick = () => {
-        if ('caches' in window) {
-          caches.keys().then(names => {
-            names.forEach(name => caches.delete(name));
-          });
+            document.getElementById("pm-do-update").onclick = async () => {
+        const btn = document.getElementById("pm-do-update");
+        btn.textContent = "Updating...";
+        btn.disabled = true;
+
+        try {
+          // 1. I-clear ang lahat ng Cache Storage
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+          }
+
+          // 2. I-unregister ang Service Worker kung nakakaabala sa pag-refresh
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+              await registration.unregister();
+            }
+          }
+        } catch (e) {
+          console.log("Cache clear error:", e);
         }
-        window.location.reload(true);
+
+        // 3. Force reload galing sa server (bypass cache)
+        window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
       };
+
 
       document.getElementById("pm-dismiss-update").onclick = () => {
         banner.remove();
