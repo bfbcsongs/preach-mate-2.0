@@ -1,4 +1,4 @@
-const CACHE_NAME = 'preach-mate-v2';
+const CACHE_NAME = 'preach-mate-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -40,8 +40,16 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event: Serves files from cache when offline, falls back to network
+// Fetch Event: Serves files from cache, but always bypasses cache for version.json
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Huwag i-cache ang version.json para dumiretso lagi sa server
+  if (url.pathname.endsWith('/version.json')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
