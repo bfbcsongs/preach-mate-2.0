@@ -14,6 +14,55 @@
 <link rel="stylesheet" href="./style.css">
 
 <title>Preach Mate</title>
+
+<!-- ==========================================
+     ⚙️ 7-PART CENTRALIZED CONFIGURATION
+     Dito mo na babaguhin ang lahat sa hinaharap!
+     ========================================== -->
+<script>
+  window.APP_CONFIG = {
+    mainTitle: "POTTER'S HOUSE",      // 1. Potter's House main menu
+    mainSubtitle: "ILAGAN",           // 2. Ilagan underneath (main menu)
+    drawerTitle: "POTTER'S HOUSE",    // 3. Potter's House drawer
+    drawerSubtitle: "ILAGAN.",        // 4. Ilagan underneath (drawer)
+    topbarBgColor: "#ffffff",         // 5. Top bar background theme color
+    accentColor: "#2563eb",           // 6. Accent color (active buttons/FAB)
+    logoUrl: "./logo.png"             // 7. Logo (mababago sa upload/file)
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Apply Main Menu Titles
+    const mainTitleEl = document.querySelector(".topbar .brand");
+    const mainSubEl = document.querySelector(".topbar .brand-wrap small");
+    if (mainTitleEl) mainTitleEl.textContent = window.APP_CONFIG.mainTitle;
+    if (mainSubEl) mainSubEl.textContent = window.APP_CONFIG.mainSubtitle;
+
+    // Apply Drawer Titles
+    const drawerTitleEl = document.querySelector(".drawer-title");
+    if (drawerTitleEl) {
+      drawerTitleEl.innerHTML = `
+        ${window.APP_CONFIG.drawerTitle}
+        <small style="display:block;font-size:12px;font-weight:500;color:#16a34a;margin-top:4px">${window.APP_CONFIG.drawerSubtitle}</small>
+      `;
+    }
+
+    // Apply Logos (Main & Drawer)
+    const logoElements = document.querySelectorAll("#topbarLogo, #drawerLogo");
+    logoElements.forEach(img => {
+      if (img && window.APP_CONFIG.logoUrl) img.src = window.APP_CONFIG.logoUrl;
+    });
+
+    // Apply Colors
+    const root = document.documentElement;
+    if (window.APP_CONFIG.topbarBgColor) {
+      root.style.setProperty('--topbar-bg', window.APP_CONFIG.topbarBgColor);
+    }
+    if (window.APP_CONFIG.accentColor) {
+      root.style.setProperty('--accent-color', window.APP_CONFIG.accentColor);
+    }
+  });
+</script>
+
 </head>
 
 <body>
