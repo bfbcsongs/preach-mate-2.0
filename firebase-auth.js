@@ -198,35 +198,42 @@
         db = firebase.firestore();
       }
 
-      auth.onAuthStateChanged(
-        function (user) {
-          currentUser = user || null;
-          authReady = true;
+      // I-set ang persistence sa LOCAL para sa Auto Re-login
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+          auth.onAuthStateChanged(
+            function (user) {
+              currentUser = user || null;
+              authReady = true;
 
-          renderAccountPanel();
+              renderAccountPanel();
 
-          window.dispatchEvent(
-            new CustomEvent(
-              "preachmate:auth-state-changed",
-              {
-                detail: {
-                  user: currentUser
-                }
-              }
-            )
-          );
-        },
-        function (error) {
-          console.error(
-            "Auth state error:",
-            error
-          );
+              window.dispatchEvent(
+                new CustomEvent(
+                  "preachmate:auth-state-changed",
+                  {
+                    detail: {
+                      user: currentUser
+                    }
+                  }
+                )
+              );
+            },
+            function (error) {
+              console.error(
+                "Auth state error:",
+                error
+              );
 
-          showToast(
-            getFriendlyError(error)
+              showToast(
+                getFriendlyError(error)
+              );
+            }
           );
-        }
-      );
+        })
+        .catch((error) => {
+          console.error("Auth persistence setting error:", error);
+        });
 
       return true;
 
@@ -542,30 +549,29 @@
   }
 
   function ensureAccountPanel() {
-  let panel = document.getElementById(
-    "pm-account-panel"
-  );
+    let panel = document.getElementById(
+      "pm-account-panel"
+    );
 
-  if (panel) return panel;
+    if (panel) return panel;
 
-  const drawer = findDrawer();
+    const drawer = findDrawer();
 
-  if (!drawer) return null;
+    if (!drawer) return null;
 
-  panel = document.createElement("section");
-  panel.id = "pm-account-panel";
+    panel = document.createElement("section");
+    panel.id = "pm-account-panel";
 
-  const footer = drawer.querySelector(".drawer-footer");
+    const footer = drawer.querySelector(".drawer-footer");
 
-  if (footer) {
-    drawer.insertBefore(panel, footer);
-  } else {
-    drawer.appendChild(panel);
+    if (footer) {
+      drawer.insertBefore(panel, footer);
+    } else {
+      drawer.appendChild(panel);
+    }
+
+    return panel;
   }
-
-  return panel;
-}
-
 
   function renderAccountPanel() {
     const panel = ensureAccountPanel();
@@ -876,12 +882,6 @@
       "pm-auth-form"
     ).onsubmit = handleAuthSubmit;
 
-    /*
-      IMPORTANT:
-      Direct onclick assignment ensures that
-      the Google button gets its handler.
-    */
-
     document.getElementById(
       "pm-google-button"
     ).onclick = signInWithGoogle;
@@ -1142,25 +1142,16 @@
   }
 
   /* ==========================================
-     GOOGLE SIGN-IN — FIXED
+     GOOGLE SIGN-IN
      ========================================== */
 
   async function signInWithGoogle() {
-    console.log(
-      "Preach Mate: Google Sign-In button clicked."
-    );
-
     if (authBusy) return;
 
     if (!window.firebase || !auth) {
       showAuthMessage(
         "Firebase is not ready. Refresh the app and try again."
       );
-
-      console.error(
-        "Google Sign-In stopped: Firebase Auth is unavailable."
-      );
-
       return;
     }
 
@@ -1191,8 +1182,6 @@
     } catch (error) {
       console.error(
         "Google Sign-In Error:",
-        error.code,
-        error.message,
         error
       );
 
@@ -1461,11 +1450,6 @@
     initFirebase();
 
     renderAccountPanel();
-
-    /*
-      Wait for the drawer if the main app
-      creates it after this script loads.
-    */
 
     const observer = new MutationObserver(
       function () {
