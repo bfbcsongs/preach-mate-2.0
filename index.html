@@ -127,12 +127,14 @@
     
     <div class="drawer-footer">Notes are saved on this device and synced to your account when cloud sync is available.</div>
 
-    <!-- DRAWER VERSION & UPDATE BADGE -->
-    <div id="drawer-version-container" style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
-      <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
-      <span id="version-status-badge" style="background: rgba(255,255,255,0.1); color: inherit; padding: 4px 10px; border-radius: 6px; font-size: 12px;">
-        Latest
-      </span>
+    <!-- INTEGRATED DRAWER UPDATE CONTAINER -->
+    <div id="drawer-update-area" style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
+        <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
+        <span style="background: rgba(255,255,255,0.1); color: inherit; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;">
+          Latest
+        </span>
+      </div>
     </div>
   </aside>
 </div>
@@ -216,7 +218,7 @@
 <!-- Main Preach Mate application -->
 <script src="./app.js" defer></script>
 
-<!-- DRAWER VERSION & UPDATE CHECKER ENGINE -->
+<!-- INTEGRATED DRAWER UPDATE ENGINE -->
 <script>
   (function () {
     const CHECK_INTERVAL = 60 * 1000;
@@ -234,40 +236,44 @@
 
           if (!localState) {
             localStorage.setItem("pm_last_update", serverState);
-            renderVersionBadge(false);
+            renderDrawerUpdate(false);
             return;
           }
 
           if (serverState !== localState) {
-            renderVersionBadge(true, data);
+            renderDrawerUpdate(true, data);
           } else {
-            renderVersionBadge(false);
+            renderDrawerUpdate(false);
           }
         })
         .catch(err => console.log("Update check skipped:", err));
     }
 
-    function renderVersionBadge(hasUpdate, serverData = null) {
-      const badge = document.getElementById("version-status-badge");
-      if (!badge) return;
+    function renderDrawerUpdate(hasUpdate, serverData = null) {
+      const updateArea = document.getElementById("drawer-update-area");
+      if (!updateArea) return;
 
       if (hasUpdate) {
-        badge.innerHTML = "Update";
-        badge.style.cssText = `
-          background: #22c55e;
-          color: #ffffff;
-          padding: 6px 14px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 700;
-          cursor: pointer;
-          box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+        const verStr = (serverData && serverData.version) ? ` (${serverData.version})` : "";
+        
+        // Ipasok ang magandang update card UI SA LOOB NG DRAWER!
+        updateArea.innerHTML = `
+          <div style="background: #18181b; color: #f9fafb; padding: 12px 14px; border-radius: 12px; border: 1px solid #3f3f46; display: flex; align-items: center; gap: 10px; font-size: 12px;">
+            <div style="flex: 1;">
+              <div style="font-weight: 700; color: #34d399; margin-bottom: 2px;">May bagong update!${verStr}</div>
+              <div style="color: #a1a1aa; font-size: 10px;">I-tap para makuha ang bagong features.</div>
+            </div>
+            <button id="pm-drawer-do-update" style="background: #d97706; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 11px;">
+              I-Update
+            </button>
+          </div>
         `;
 
-        badge.onclick = async () => {
-          badge.textContent = "Updating...";
-          badge.style.pointerEvents = "none";
-          badge.style.opacity = "0.8";
+        document.getElementById("pm-drawer-do-update").onclick = async () => {
+          const btn = document.getElementById("pm-drawer-do-update");
+          btn.textContent = "Updating...";
+          btn.style.pointerEvents = "none";
+          btn.style.opacity = "0.8";
 
           try {
             if (serverData) {
@@ -292,16 +298,15 @@
           window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
         };
       } else {
-        badge.innerHTML = "Latest";
-        badge.style.cssText = `
-          background: rgba(255, 255, 255, 0.1);
-          color: inherit;
-          padding: 4px 10px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 500;
+        // Balik sa simpleng "VERSION: Latest"
+        updateArea.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
+            <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
+            <span style="background: rgba(255,255,255,0.1); color: inherit; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;">
+              Latest
+            </span>
+          </div>
         `;
-        badge.onclick = null;
       }
     }
 
