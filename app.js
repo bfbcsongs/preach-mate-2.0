@@ -599,7 +599,6 @@ function setMode(edit){
   $("modeLabel").textContent=isEditMode?"EDIT":"READ";
   $("menuMode").textContent=isEditMode?"Read Mode":"Edit Mode";
   
-  // Auto-hide the 3-dot dropdown menu modal when switching modes
   menu.classList.add("hidden");
 
   toolbar.classList.toggle("hidden",!isEditMode);
@@ -843,7 +842,7 @@ function showFavorites(){
 function openDrawer(){$("drawerBackdrop").classList.remove("hidden")}
 function closeDrawer(){$("drawerBackdrop").classList.add("hidden")}
 
-/* EXPORT BACKUP */
+/* EXPORT DIRECT TO PHONE DOCUMENTS / DOWNLOADS STORAGE */
 function exportNotes(){
   try{
     const backup={
@@ -853,19 +852,24 @@ function exportNotes(){
       categories:categories,
       notes:notes
     };
-    const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;
-    a.download="preach-mate-backup.json";
+    const jsonString = JSON.stringify(backup, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    
+    // Matagumpay na magdi-download sa Documents/Downloads folder ng phone mo
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `PreachMate_Backup_${dateStr}.json`;
+    
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
     closeDrawer();
-    showToast("Backup exported successfully!");
+    showToast("Backup saved to phone storage!");
   }catch(e){
-    showToast("Unable to create backup.");
+    showToast("Unable to create backup file.");
   }
 }
 
@@ -891,7 +895,7 @@ function restoreNotesFromFile(file){
         return;
       }
       openDialog("Restore Backup?",`<p style="line-height:1.5;color:#4b5563">
-        This will replace your current notes and categories with the selected backup.
+        This will replace or merge your current notes and categories with the selected backup file.
         <br><br>Notes in backup: <b>${data.notes.length}</b>
         <br>Categories in backup: <b>${data.categories.length}</b>
       </p>`,()=>{
@@ -1064,12 +1068,11 @@ function schedulePasteTailScroll(){
     requestAnimationFrame(()=>requestAnimationFrame(positionPastedTail));
   },0);
 }
-/* PASTE SANITIZER TO PREVENT BROKEN HTML */
+
+/* PASTE SANITIZER */
 noteBody.addEventListener("paste", (e) => {
   e.preventDefault();
-  
   const plainText = (e.clipboardData || window.clipboardData).getData("text/plain");
-  
   if (document.queryCommandSupported("insertText")) {
     document.execCommand("insertText", false, plainText);
   } else {
@@ -1078,7 +1081,6 @@ noteBody.addEventListener("paste", (e) => {
     selection.deleteFromDocument();
     selection.getRangeAt(0).insertNode(document.createTextNode(plainText));
   }
-  
   schedulePasteTailScroll();
 });
 
