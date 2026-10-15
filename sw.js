@@ -1,4 +1,4 @@
-const CACHE_NAME = 'preach-mate-v3';
+const CACHE_NAME = 'preach-mate-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,7 +12,7 @@ const ASSETS_TO_CACHE = [
   './icon-512.png'
 ];
 
-// Install Event: Caches all critical files
+// Install Event: Caches critical files
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -20,10 +20,9 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  self.skipWaiting();
 });
 
-// Activate Event: Cleans up old caches if updated
+// Activate Event: Cleans up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -37,19 +36,27 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim();
 });
 
-// Fetch Event: Serves files from cache, but always bypasses cache for version.json
+// Fetch Event: Network-first strategy for dynamic config files & index.html
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Huwag i-cache ang version.json para dumiretso lagi sa server
-  if (url.pathname.endsWith('/version.json')) {
-    event.respondWith(fetch(event.request));
+  // Laging kumuha muna sa network/server para sa version.json at index.html
+  if (url.pathname.endsWith('/version.json') || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
     return;
   }
 
+  // Cache-first for all other assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
