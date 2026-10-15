@@ -391,8 +391,10 @@ function renderDrawerCategories(){
     holder.appendChild(b);
   });
 }
+/* ==========================================
+   SMOOTH & INSTANT CATEGORY DRAGGING ENGINE
+   ========================================== */
 
-/* SAFE & RELIABLE CATEGORY DRAGGING */
 function attachCategoryDrag(button, surface) {
   const isTabs = surface === "tabs";
   const container = isTabs ? $("categoryTabs") : $("drawerCategories");
@@ -403,6 +405,7 @@ function attachCategoryDrag(button, surface) {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (button.dataset.category === "All Notes") return;
 
+    // Sa drawer, kailangan sa handle humawak; sa tabs, kahit saan sa button
     if (!isTabs && !e.target.closest(".cat-drag-handle")) return;
 
     dragInfo = {
@@ -424,27 +427,39 @@ function attachCategoryDrag(button, surface) {
     const dy = e.clientY - dragInfo.startY;
     const distance = axis === "x" ? Math.abs(dx) : Math.abs(dy);
 
+    // 1. Smooth & Quick Activation (4px lang para napakadaling hilingin)
     if (!dragInfo.moved) {
-      if (distance < 12) return;
+      if (distance < 4) return;
       dragInfo.moved = true;
       button.classList.add("dragging");
+      button.style.opacity = "0.65";
+      button.style.transform = "scale(1.05)";
+      button.style.zIndex = "1000";
       try { button.setPointerCapture(e.pointerId); } catch (err) {}
     }
 
     if (e.cancelable) e.preventDefault();
 
-    const underPointer = document.elementFromPoint(e.clientX, e.clientY);
-    const target = underPointer ? underPointer.closest(selector) : null;
+    // 2. Real-time Fluid Reordering Across Any Distance (e.g. 5th to 1st)
+    const elements = [...container.querySelectorAll(selector)];
+    const cursorCoord = axis === "x" ? e.clientX : e.clientY;
 
-    if (!target || target === button || target.dataset.category === "All Notes" || target.parentElement !== container) return;
+    for (const target of elements) {
+      if (target === button || target.dataset.category === "All Notes") continue;
 
-    const rect = target.getBoundingClientRect();
-    const before = axis === "x" ? e.clientX < rect.left + rect.width / 2 : e.clientY < rect.top + rect.height / 2;
+      const rect = target.getBoundingClientRect();
+      const targetMid = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
 
-    if (before) {
-      if (button.nextElementSibling !== target) container.insertBefore(button, target);
-    } else if (target.nextElementSibling !== button) {
-      container.insertBefore(button, target.nextElementSibling);
+      if (cursorCoord < targetMid) {
+        if (button.nextElementSibling !== target) {
+          container.insertBefore(button, target);
+        }
+        break;
+      } else {
+        if (target.nextElementSibling !== button) {
+          container.insertBefore(button, target.nextElementSibling);
+        }
+      }
     }
   });
 
@@ -453,7 +468,11 @@ function attachCategoryDrag(button, surface) {
 
     if (dragInfo.moved) {
       button.classList.remove("dragging");
+      button.style.opacity = "";
+      button.style.transform = "";
+      button.style.zIndex = "";
 
+      // Re-index at i-save ang bagong pagkakasunod-sunod
       const reordered = [...container.querySelectorAll(selector)]
         .map(el => el.dataset.category)
         .filter(cat => cat && cat !== "All Notes");
@@ -465,9 +484,9 @@ function attachCategoryDrag(button, surface) {
       suppressCategoryClick = true;
       renderCategories();
       renderNotes();
-      showToast("Category order saved");
+      showToast("Category reordered!");
 
-      setTimeout(() => { suppressCategoryClick = false; }, 300);
+      setTimeout(() => { suppressCategoryClick = false; }, 250);
     }
 
     dragInfo = null;
@@ -476,6 +495,7 @@ function attachCategoryDrag(button, surface) {
   button.addEventListener("pointerup", finishDrag);
   button.addEventListener("pointercancel", finishDrag);
 }
+
 
 /* NOTES LIST */
 function renderNotes(){
