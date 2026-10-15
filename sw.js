@@ -1,4 +1,4 @@
-const CACHE_NAME = 'preach-mate-v4';
+const CACHE_NAME = 'preach-mate-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,15 +12,14 @@ const ASSETS_TO_CACHE = [
   './icon-512.png'
 ];
 
-// Install Event: Cache assets WITHOUT auto-activating
+// Install Event: Caches critical files without skipping waiting
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching app assets');
+      console.log('[SW] Caching assets');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  // SINADYANG WALA DITO ANG self.skipWaiting() PARA HINDI MAG-AUTO RELOAD!
 });
 
 // Activate Event: Clean old caches
@@ -30,33 +29,26 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Deleting old cache:', cache);
+            console.log('[SW] Deleting old cache:', cache);
             return caches.delete(cache);
           }
         })
       );
     })
   );
-  // SINADYANG WALA DITO ANG self.clients.claim()
 });
 
-// Fetch Event: Network-first for index.html & version.json, Cache-first for others
+// Fetch Event: Bypass SW cache strictly for version.json and main page navigation
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  if (url.pathname.endsWith('/version.json') || url.pathname.endsWith('/index.html') || url.pathname === '/' || url.pathname.endsWith('/sw.js')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
-    );
+  // Direct network bypass para sa version.json
+  if (url.pathname.endsWith('/version.json')) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
+  // Cache-first strategy para sa lahat ng assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
