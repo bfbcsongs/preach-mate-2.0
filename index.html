@@ -209,13 +209,19 @@
 
     <button class="drawer-item" id="drawerExport">↗ &nbsp; Backup Notes</button>
     <button class="drawer-item" id="drawerRestore">↙ &nbsp; Restore Backup</button>
-    <button onclick="purgeCorruptedNote()" style="color: red; padding: 12px; font-weight: bold;">
-      ⚠️ Delete Corrupted Notes
-    </button>
+    
+        <div class="drawer-footer">Notes are saved on this device and synced to your account when cloud sync is available.</div>
 
-    <div class="drawer-footer">Notes are saved on this device and synced to your account when cloud sync is available.</div>
+    <!-- DRAWER VERSION & UPDATE BADGE -->
+    <div id="drawer-version-container" style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
+      <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
+      <span id="version-status-badge" style="background: rgba(255,255,255,0.1); color: inherit; padding: 4px 10px; border-radius: 6px; font-size: 12px;">
+        Latest
+      </span>
+    </div>
   </aside>
 </div>
+
 
 <section class="editor-screen hidden" id="editorScreen">
 
