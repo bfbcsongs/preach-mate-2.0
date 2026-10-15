@@ -241,7 +241,7 @@ function persist(){
   }
   scheduleDurableBackup();
   if(!localSaved){
-    showToast("Local save failed. Export a backup if possible.");
+    showToast("Local save failed.");
   }
   return localSaved;
 }
@@ -309,36 +309,6 @@ function saveCurrentNote(){
     clearTimeout(saveStatusTimer);
     setSaveStatus("error");
   }
-}
-
-/* PERMANENT FILE EXPORT TRIGGER (USER INTERACTION) */
-function triggerPermanentFileSave() {
-  const n = currentNote();
-  if (!n) return;
-
-  saveCurrentNote();
-
-  const backup = {
-    app: "Preach Mate",
-    version: 2,
-    savedAt: new Date().toISOString(),
-    categories: categories,
-    notes: notes
-  };
-
-  const jsonString = JSON.stringify(backup, null, 2);
-  const blob = new Blob([jsonString], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  
-  const safeTitle = (n.title || "note").replace(/[^a-z0-9]/gi, '_').toLowerCase();
-  a.href = url;
-  a.download = `PreachMate_${safeTitle}_${Date.now()}.json`;
-  
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 function togglePin(id){
@@ -606,12 +576,8 @@ function newNote(){
   setTimeout(()=>noteTitle.focus(),100);
 }
 
-/* UNIVERSAL CLOSE / EXIT EDITOR WITH FILE DISCHARGE */
 function closeEditor(){
   clearReadMarker();
-  if (currentNoteId) {
-    triggerPermanentFileSave();
-  }
   saveCurrentNote();
   closePalette();
   editor.classList.add("hidden");
@@ -879,7 +845,7 @@ function showFavorites(){
 function openDrawer(){$("drawerBackdrop").classList.remove("hidden")}
 function closeDrawer(){$("drawerBackdrop").classList.add("hidden")}
 
-/* EXPORT DIRECT TO PHONE DOCUMENTS STORAGE */
+/* EXPORT MANUAL BACKUP FILE (ONLY VIA DRAWER OR MANUAL BACKUP) */
 function exportNotes(){
   try{
     const backup={
@@ -903,7 +869,7 @@ function exportNotes(){
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
     closeDrawer();
-    showToast("Saved to phone storage!");
+    showToast("Backup saved to phone storage!");
   }catch(e){
     showToast("Unable to create backup file.");
   }
@@ -1159,10 +1125,10 @@ noteBody.addEventListener("mouseup",saveSelection);
 noteBody.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 noteTitle.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 
-/* MAIN BUTTONS AND MENUS */
+/* MAIN BUTTONS AND MENUS (NO MORE AUTO FILE DOWNLOAD) */
 $("btnSaveFile")?.addEventListener("click", () => {
-  triggerPermanentFileSave();
-  showToast("Saved!");
+  saveCurrentNote();
+  showToast("✓ Saved locally");
 });
 
 $("btnNewNote").addEventListener("click",newNote);
