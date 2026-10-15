@@ -12,7 +12,7 @@ const ASSETS_TO_CACHE = [
   './icon-512.png'
 ];
 
-// Install Event: Caches critical files
+// Install Event: Cache assets WITHOUT auto-activating
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -20,9 +20,10 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  // SINADYANG WALA DITO ANG self.skipWaiting() PARA HINDI MAG-AUTO RELOAD!
 });
 
-// Activate Event: Cleans up old caches
+// Activate Event: Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -36,14 +37,14 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // SINADYANG WALA DITO ANG self.clients.claim()
 });
 
-// Fetch Event: Network-first strategy for dynamic config files & index.html
+// Fetch Event: Network-first for index.html & version.json, Cache-first for others
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Laging kumuha muna sa network/server para sa version.json at index.html
-  if (url.pathname.endsWith('/version.json') || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+  if (url.pathname.endsWith('/version.json') || url.pathname.endsWith('/index.html') || url.pathname === '/' || url.pathname.endsWith('/sw.js')) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
@@ -56,7 +57,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for all other assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
