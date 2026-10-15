@@ -1,14 +1,10 @@
 /* ==========================================
-   PREACH MATE — FIREBASE AUTH
-   Login • Register • Google • Password Reset
+   PREACH MATE — FIREBASE AUTH & DRAWER BARS
+   Login • Register • Google • Clean Layout
    ========================================== */
 
 (function () {
   "use strict";
-
-  /* ==========================================
-     FIREBASE CONFIG
-     ========================================== */
 
   const firebaseConfig = {
     apiKey: "AIzaSyBLXaXG8EcxhGxqZCkFiqzLp9uF7vnYZS0",
@@ -22,13 +18,8 @@
   let auth = null;
   let db = null;
   let currentUser = null;
-  let currentAuthMode = "login";
   let authReady = false;
   let authBusy = false;
-
-  /* ==========================================
-     TOAST
-     ========================================== */
 
   function showToast(message) {
     if (typeof window.showToast === "function") {
@@ -36,169 +27,55 @@
       return;
     }
 
-    let toast = document.getElementById(
-      "pm-auth-toast"
-    );
-
+    let toast = document.getElementById("pm-auth-toast");
     if (!toast) {
       toast = document.createElement("div");
       toast.id = "pm-auth-toast";
-
       toast.style.cssText = `
-        position:fixed;
-        left:50%;
-        bottom:28px;
-        transform:translateX(-50%);
-        z-index:1000000;
-        max-width:90%;
-        padding:12px 18px;
-        border-radius:12px;
-        background:#27272a;
-        color:#fff;
-        font-size:14px;
-        box-shadow:0 5px 24px #0005;
-        display:none;
-        text-align:center;
+        position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
+        z-index:1000000; max-width:90%; padding:12px 18px; border-radius:12px;
+        background:#27272a; color:#fff; font-size:14px; box-shadow:0 5px 24px #0005;
+        display:none; text-align:center;
       `;
-
       document.body.appendChild(toast);
     }
-
     toast.textContent = message;
     toast.style.display = "block";
-
     clearTimeout(toast._timer);
-
-    toast._timer = setTimeout(function () {
-      toast.style.display = "none";
-    }, 3500);
+    toast._timer = setTimeout(() => { toast.style.display = "none"; }, 3500);
   }
 
-  /* ==========================================
-     ERROR MESSAGES
-     ========================================== */
-
   function getFriendlyError(error) {
-    const code = error && error.code
-      ? error.code
-      : "";
-
+    const code = error && error.code ? error.code : "";
     const messages = {
-      "auth/invalid-email":
-        "Invalid email address.",
-
-      "auth/user-not-found":
-        "Walang account na gumagamit ng email na ito.",
-
-      "auth/wrong-password":
-        "Incorrect password.",
-
-      "auth/invalid-credential":
-        "Incorrect email or password.",
-
-      "auth/email-already-in-use":
-        "May account na gamit ang email na ito.",
-
-      "auth/weak-password":
-        "Gumamit ng mas malakas na password.",
-
-      "auth/too-many-requests":
-        "Masyadong maraming attempts. Subukan muli mamaya.",
-
-      "auth/network-request-failed":
-        "Network error. Tingnan ang internet connection.",
-
-      "auth/popup-closed-by-user":
-        "Isinara ang Google sign-in window.",
-
-      "auth/popup-blocked":
-        "Na-block ang Google sign-in popup.",
-
-      "auth/cancelled-popup-request":
-        "May naunang sign-in request na hindi pa tapos.",
-
-      "auth/unauthorized-domain":
-        "Hindi authorized ang domain na ito sa Firebase.",
-
-      "auth/operation-not-allowed":
-        "Hindi enabled ang sign-in method sa Firebase.",
-
-      "auth/account-exists-with-different-credential":
-        "May account na ang email na ito. Gamitin ang dating sign-in method.",
-
-      "auth/credential-already-in-use":
-        "Ang Google account na ito ay naka-link na sa ibang account.",
-
-      "auth/requires-recent-login":
-        "Mag-login muli bago gawin ang action na ito.",
-
-      "auth/invalid-api-key":
-        "Invalid ang Firebase API key.",
-
-      "auth/app-not-authorized":
-        "Hindi authorized ang app na ito sa Firebase."
+      "auth/invalid-email": "Invalid email address.",
+      "auth/user-not-found": "Walang account sa email na ito.",
+      "auth/wrong-password": "Incorrect password.",
+      "auth/invalid-credential": "Incorrect email or password.",
+      "auth/network-request-failed": "Network error. Tingnan ang internet connection.",
+      "auth/popup-closed-by-user": "Isinara ang Google sign-in window.",
+      "auth/popup-blocked": "Na-block ang Google sign-in popup."
     };
-
-    if (messages[code]) {
-      return messages[code];
-    }
-
-    if (error && error.message) {
-      return (code ? code + ": " : "") +
-        error.message;
-    }
-
-    return "May naganap na error. Subukan muli.";
+    return messages[code] || (error && error.message ? error.message : "May naganap na error. Subukan muli.");
   }
 
   function escapeHTML(value) {
-    return String(value || "").replace(
-      /[&<>"']/g,
-      function (character) {
-        const entities = {
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
-        };
-
-        return entities[character];
-      }
-    );
+    return String(value || "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
   }
-
-  /* ==========================================
-     FIREBASE INITIALIZATION
-     ========================================== */
 
   function initFirebase() {
     try {
-      if (!window.firebase) {
-        console.error(
-          "Firebase SDK is not loaded."
-        );
-
-        showToast(
-          "Hindi nag-load ang Firebase. I-refresh ang app."
-        );
-
-        return false;
-      }
-
+      if (!window.firebase) return false;
       if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
       }
-
       auth = firebase.auth();
-
-      if (
-        typeof firebase.firestore === "function"
-      ) {
+      if (typeof firebase.firestore === "function") {
         db = firebase.firestore();
       }
 
-      // I-set ang persistence sa LOCAL para sa Auto Re-login
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
           auth.onAuthStateChanged(
@@ -209,333 +86,112 @@
               renderAccountPanel();
 
               window.dispatchEvent(
-                new CustomEvent(
-                  "preachmate:auth-state-changed",
-                  {
-                    detail: {
-                      user: currentUser
-                    }
-                  }
-                )
+                new CustomEvent("preachmate:auth-state-changed", {
+                  detail: { user: currentUser }
+                })
               );
             },
             function (error) {
-              console.error(
-                "Auth state error:",
-                error
-              );
-
-              showToast(
-                getFriendlyError(error)
-              );
+              console.error("Auth state error:", error);
             }
           );
         })
-        .catch((error) => {
-          console.error("Auth persistence setting error:", error);
-        });
+        .catch(err => console.error("Persistence error:", err));
 
       return true;
-
     } catch (error) {
-      console.error(
-        "Firebase initialization error:",
-        error
-      );
-
-      showToast(
-        getFriendlyError(error)
-      );
-
+      console.error("Firebase init error:", error);
       return false;
     }
   }
 
-  /* ==========================================
-     STYLES
-     ========================================== */
-
   function injectStyles() {
-    if (
-      document.getElementById(
-        "pm-auth-styles"
-      )
-    ) {
-      return;
-    }
+    if (document.getElementById("pm-auth-styles")) return;
 
     const style = document.createElement("style");
-
     style.id = "pm-auth-styles";
-
     style.textContent = `
+      /* TOP DRAWER BACKUP BAR (LOGGED OUT) */
+      #pm-top-backup-bar {
+        background: linear-gradient(135deg, #d97706, #b45309);
+        color: #ffffff;
+        padding: 10px 14px;
+        margin: -16px -16px 12px -16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      #pm-top-backup-bar:hover {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+      .pm-backup-btn-text {
+        background: #ffffff;
+        color: #b45309;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+      }
+
+      /* BOTTOM DRAWER ACCOUNT PANEL (LOGGED IN) */
       #pm-account-panel {
-        margin:12px 0;
-        padding:14px;
-        border-radius:14px;
-        background:rgba(128,128,128,.08);
-        border:1px solid rgba(128,128,128,.18);
-        color:inherit;
-        font-family:inherit;
+        margin-top: auto;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(128,128,128,.1);
+        border: 1px solid rgba(128,128,128,.2);
       }
-
-      #pm-account-panel * {
-        box-sizing:border-box;
-      }
-
-      .pm-account-title {
-        font-size:15px;
-        font-weight:700;
-        margin-bottom:5px;
-      }
-
-      .pm-account-subtitle {
-        font-size:12px;
-        opacity:.72;
-        line-height:1.5;
-        overflow-wrap:anywhere;
-        margin-bottom:12px;
-      }
-
-      .pm-account-actions {
-        display:flex;
-        flex-direction:column;
-        gap:8px;
-      }
-
+      .pm-account-title { font-size: 13px; font-weight: 700; color: #34d399; margin-bottom: 3px; }
+      .pm-account-subtitle { font-size: 12px; opacity: .8; line-height: 1.4; overflow-wrap: anywhere; margin-bottom: 10px; }
+      
       .pm-auth-button {
-        width:100%;
-        min-height:42px;
-        padding:10px 13px;
-        border:1px solid rgba(128,128,128,.25);
-        border-radius:10px;
-        background:transparent;
-        color:inherit;
-        font:inherit;
-        font-size:13px;
-        font-weight:600;
-        cursor:pointer;
-        text-align:center;
+        width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid rgba(128,128,128,.25);
+        border-radius: 10px; background: transparent; color: inherit; font: inherit;
+        font-size: 13px; font-weight: 600; cursor: pointer; text-align: center;
       }
+      .pm-auth-danger { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+      .pm-auth-danger:hover { background: rgba(239,68,68,0.1); }
 
-      .pm-auth-button:disabled {
-        opacity:.55;
-        cursor:wait;
-      }
-
-      .pm-auth-primary {
-        background:#d97706;
-        border-color:#d97706;
-        color:#fff;
-      }
-
-      .pm-auth-google {
-        background:#fff;
-        color:#222;
-        border-color:#ddd;
-      }
-
-      .pm-auth-danger {
-        color:#ef4444;
-      }
-
+      /* AUTH MODAL STYLES */
       #pm-auth-overlay {
-        position:fixed;
-        inset:0;
-        z-index:999990;
-        display:none;
-        align-items:center;
-        justify-content:center;
-        padding:16px;
-        background:rgba(0,0,0,.72);
-        backdrop-filter:blur(5px);
-        -webkit-backdrop-filter:blur(5px);
+        position: fixed; inset: 0; z-index: 999990; display: none;
+        align-items: center; justify-content: center; padding: 16px;
+        background: rgba(0,0,0,.80); backdrop-filter: blur(6px);
       }
-
-      #pm-auth-overlay.pm-auth-visible {
-        display:flex;
-      }
+      #pm-auth-overlay.pm-auth-visible { display: flex; }
 
       #pm-auth-modal {
-        width:100%;
-        max-width:420px;
-        max-height:90vh;
-        overflow-y:auto;
-        position:relative;
-        padding:24px;
-        border-radius:20px;
-        background:#202124;
-        color:#f9fafb;
-        border:1px solid #3f4145;
-        box-shadow:0 20px 70px rgba(0,0,0,.5);
-        font-family:inherit;
+        width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto;
+        position: relative; padding: 22px; border-radius: 18px;
+        background: #18181b; color: #f9fafb; border: 1px solid #3f3f46;
+        box-shadow: 0 20px 70px rgba(0,0,0,.6); font-family: inherit;
       }
 
-      #pm-auth-modal * {
-        box-sizing:border-box;
+      .pm-auth-google-priority {
+        background: #ffffff; color: #1f2937; border: 2px solid #e5e7eb;
+        font-size: 14px; font-weight: 700; display: flex; align-items: center;
+        justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       }
-
-      #pm-auth-close {
-        position:absolute;
-        top:12px;
-        right:12px;
-        width:36px;
-        height:36px;
-        border:0;
-        border-radius:50%;
-        background:#303134;
-        color:#fff;
-        font-size:23px;
-        cursor:pointer;
+      .pm-auth-close {
+        position: absolute; top: 12px; right: 12px; border: 0; background: #27272a;
+        color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px;
       }
-
-      .pm-auth-brand {
-        text-align:center;
-        margin:4px 0 22px;
-      }
-
-      .pm-auth-logo {
-        width:54px;
-        height:54px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        margin:0 auto 12px;
-        border-radius:16px;
-        background:#d97706;
-        color:#fff;
-        font-size:25px;
-        font-weight:800;
-      }
-
-      .pm-auth-brand h2 {
-        margin:0 0 7px;
-        font-size:23px;
-        line-height:1.3;
-      }
-
-      .pm-auth-brand p {
-        margin:0;
-        font-size:13px;
-        color:#b8b8bd;
-        line-height:1.5;
-      }
-
-      .pm-auth-field {
-        display:block;
-        margin-bottom:15px;
-      }
-
-      .pm-auth-field span {
-        display:block;
-        margin-bottom:7px;
-        font-size:13px;
-        font-weight:600;
-        color:#e5e7eb;
-      }
-
+      .pm-auth-field { display: block; margin-bottom: 12px; }
+      .pm-auth-field span { display: block; margin-bottom: 5px; font-size: 12px; color: #a1a1aa; }
       .pm-auth-field input {
-        width:100%;
-        min-height:46px;
-        padding:12px;
-        border:1px solid #484a50;
-        border-radius:10px;
-        outline:none;
-        background:#292a2d;
-        color:#fff;
-        font:inherit;
-        font-size:14px;
+        width: 100%; min-height: 42px; padding: 10px; border: 1px solid #3f3f46;
+        border-radius: 8px; outline: none; background: #27272a; color: #fff; font: inherit; font-size: 13px;
       }
-
-      .pm-auth-field input:focus {
-        border-color:#f59e0b;
-        box-shadow:0 0 0 2px rgba(245,158,11,.15);
-      }
-
-      .pm-auth-field input::placeholder {
-        color:#888b91;
-      }
-
-      .pm-auth-form .pm-auth-button {
-        margin-top:4px;
-        min-height:46px;
-      }
-
-      .pm-auth-divider {
-        display:flex;
-        align-items:center;
-        gap:12px;
-        margin:18px 0;
-        color:#9ca3af;
-        font-size:12px;
-      }
-
-      .pm-auth-divider::before,
-      .pm-auth-divider::after {
-        content:"";
-        flex:1;
-        height:1px;
-        background:#414247;
-      }
-
-      .pm-auth-links {
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:13px;
-        margin-top:18px;
-        text-align:center;
-      }
-
-      .pm-auth-link {
-        padding:3px;
-        border:0;
-        background:none;
-        color:#fbbf24;
-        font:inherit;
-        font-size:13px;
-        cursor:pointer;
-      }
-
-      .pm-auth-message {
-        display:none;
-        margin-bottom:15px;
-        padding:11px;
-        border-radius:9px;
-        background:#3b3030;
-        color:#fecaca;
-        font-size:13px;
-        line-height:1.5;
-        overflow-wrap:anywhere;
-      }
-
-      .pm-auth-message.pm-auth-success {
-        background:#183528;
-        color:#bbf7d0;
-      }
-
-      .pm-auth-note {
-        margin-top:16px;
-        color:#a1a1aa;
-        font-size:11px;
-        line-height:1.5;
-        text-align:center;
-      }
-
-      @media (max-width:420px) {
-        #pm-auth-modal {
-          padding:21px 18px;
-          border-radius:17px;
-        }
-      }
+      .pm-auth-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: #71717a; font-size: 11px; }
+      .pm-auth-divider::before, .pm-auth-divider::after { content: ""; flex: 1; height: 1px; background: #27272a; }
     `;
-
     document.head.appendChild(style);
   }
-
-  /* ==========================================
-     ACCOUNT PANEL
-     ========================================== */
 
   function findDrawer() {
     return (
@@ -543,972 +199,202 @@
       document.querySelector("#drawer") ||
       document.querySelector(".drawer-content") ||
       document.querySelector("#drawer-content") ||
-      document.querySelector(".sidebar") ||
-      document.querySelector("#sidebar")
+      document.querySelector(".sidebar")
     );
-  }
-
-  function ensureAccountPanel() {
-    let panel = document.getElementById(
-      "pm-account-panel"
-    );
-
-    if (panel) return panel;
-
-    const drawer = findDrawer();
-
-    if (!drawer) return null;
-
-    panel = document.createElement("section");
-    panel.id = "pm-account-panel";
-
-    const footer = drawer.querySelector(".drawer-footer");
-
-    if (footer) {
-      drawer.insertBefore(panel, footer);
-    } else {
-      drawer.appendChild(panel);
-    }
-
-    return panel;
   }
 
   function renderAccountPanel() {
-    const panel = ensureAccountPanel();
+    const drawer = findDrawer();
+    if (!drawer) return;
 
-    if (!panel) return;
+    let topBar = document.getElementById("pm-top-backup-bar");
+    let bottomPanel = document.getElementById("pm-account-panel");
 
-    if (!authReady) {
-      panel.innerHTML = `
-        <div class="pm-account-title">
-          Preach Mate Account
-        </div>
-        <div class="pm-account-subtitle">
-          Checking account status...
-        </div>
-      `;
-
-      return;
-    }
-
-    if (currentUser) {
-      const name = escapeHTML(
-        currentUser.displayName ||
-        currentUser.email ||
-        "Preach Mate User"
-      );
-
-      const email = escapeHTML(
-        currentUser.email || ""
-      );
-
-      const emailPasswordUser =
-        currentUser.providerData &&
-        currentUser.providerData.some(
-          function (provider) {
-            return provider.providerId === "password";
-          }
-        );
-
-      panel.innerHTML = `
-        <div class="pm-account-title">
-          Signed In
-        </div>
-
-        <div class="pm-account-subtitle">
-          ${name}<br>${email}
-        </div>
-
-        ${
-          emailPasswordUser &&
-          !currentUser.emailVerified
-            ? `
-              <div class="pm-account-actions">
-                <button
-                  type="button"
-                  class="pm-auth-button"
-                  id="pm-verify-email"
-                >
-                  Verify Email
-                </button>
-              </div>
-            `
-            : ""
-        }
-
-        <div
-          class="pm-account-actions"
-          style="margin-top:8px"
-        >
-          <button
-            type="button"
-            class="pm-auth-button pm-auth-danger"
-            id="pm-logout-button"
-          >
-            Log Out
-          </button>
-        </div>
-      `;
-
-      const verifyButton = document.getElementById(
-        "pm-verify-email"
-      );
-
-      if (verifyButton) {
-        verifyButton.onclick = sendVerificationEmail;
+    if (!currentUser) {
+      // 1. LOGGED OUT STATE: ipakita ang Top Bar overlays
+      if (!topBar) {
+        topBar = document.createElement("div");
+        topBar.id = "pm-top-backup-bar";
+        topBar.innerHTML = `
+          <span>☁️ Back up your files</span>
+          <span class="pm-backup-btn-text">SIGN IN</span>
+        `;
+        topBar.onclick = () => openAuthDialog("login");
+        drawer.insertBefore(topBar, drawer.firstChild);
+      } else {
+        topBar.style.display = "flex";
       }
 
-      const logoutButton = document.getElementById(
-        "pm-logout-button"
-      );
-
-      if (logoutButton) {
-        logoutButton.onclick = logout;
-      }
+      // Itago ang bottom panel kapag logged out
+      if (bottomPanel) bottomPanel.style.display = "none";
 
     } else {
-      panel.innerHTML = `
-        <div class="pm-account-title">
-          Preach Mate Account
-        </div>
+      // 2. SIGNED IN STATE: Itago ang Top Bar at lumipat sa Bottom Footer Panel
+      if (topBar) topBar.style.display = "none";
 
-        <div class="pm-account-subtitle">
-          Sign in to your account.
-        </div>
+      if (!bottomPanel) {
+        bottomPanel = document.createElement("section");
+        bottomPanel.id = "pm-account-panel";
+        drawer.appendChild(bottomPanel);
+      } else {
+        bottomPanel.style.display = "block";
+      }
 
-        <div class="pm-account-actions">
-          <button
-            type="button"
-            class="pm-auth-button pm-auth-primary"
-            id="pm-login-button"
-          >
-            Log In
-          </button>
+      const email = escapeHTML(currentUser.email || currentUser.displayName || "Preach Mate User");
 
-          <button
-            type="button"
-            class="pm-auth-button"
-            id="pm-register-button"
-          >
-            Create Account
-          </button>
-        </div>
+      bottomPanel.innerHTML = `
+        <div class="pm-account-title">✓ SIGNED IN</div>
+        <div class="pm-account-subtitle">${email}</div>
+        <button type="button" class="pm-auth-button pm-auth-danger" id="pm-logout-button">Log Out</button>
       `;
 
-      document.getElementById(
-        "pm-login-button"
-      ).onclick = function () {
-        openAuthDialog("login");
-      };
-
-      document.getElementById(
-        "pm-register-button"
-      ).onclick = function () {
-        openAuthDialog("register");
-      };
+      document.getElementById("pm-logout-button").onclick = logout;
     }
   }
 
-  /* ==========================================
-     AUTH MODAL
-     ========================================== */
-
   function ensureAuthDialog() {
-    let overlay = document.getElementById(
-      "pm-auth-overlay"
-    );
-
+    let overlay = document.getElementById("pm-auth-overlay");
     if (overlay) return overlay;
 
     overlay = document.createElement("div");
     overlay.id = "pm-auth-overlay";
 
     overlay.innerHTML = `
-      <div
-        id="pm-auth-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="pm-auth-heading"
-      >
-        <button
-          type="button"
-          id="pm-auth-close"
-          aria-label="Close"
-        >&times;</button>
-
-        <div class="pm-auth-brand">
-          <div class="pm-auth-logo">P</div>
-
-          <h2 id="pm-auth-heading">
-            Welcome Back
-          </h2>
-
-          <p id="pm-auth-subtitle">
-            Sign in to your Preach Mate account.
-          </p>
+      <div id="pm-auth-modal" role="dialog" aria-modal="true">
+        <button type="button" class="pm-auth-close" id="pm-auth-close">&times;</button>
+        
+        <div style="text-align:center; margin-bottom:16px;">
+          <h2 style="margin:0 0 6px; font-size:20px;">Preach Mate Backup</h2>
+          <p style="margin:0; font-size:12px; color:#a1a1aa;">Sign in to back up your sermons and sync notes across devices.</p>
         </div>
 
-        <div
-          id="pm-auth-message"
-          class="pm-auth-message"
-          role="status"
-          aria-live="polite"
-        ></div>
+        <!-- PRIORITY: GOOGLE LOGIN -->
+        <button type="button" id="pm-google-button" class="pm-auth-button pm-auth-google-priority">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          Continue with Google
+        </button>
 
-        <form
-          id="pm-auth-form"
-          class="pm-auth-form"
-          novalidate
-        >
+        <div class="pm-auth-divider">OR LOGIN WITH EMAIL</div>
+
+        <form id="pm-auth-form" novalidate>
           <label class="pm-auth-field">
             <span>Email Address</span>
-            <input
-              type="email"
-              id="pm-auth-email"
-              name="email"
-              placeholder="you@example.com"
-              autocomplete="email"
-              required
-            >
-          </label>
-
-          <label
-            class="pm-auth-field"
-            id="pm-auth-name-field"
-            style="display:none"
-          >
-            <span>Your Name</span>
-            <input
-              type="text"
-              id="pm-auth-name"
-              name="name"
-              placeholder="Your name"
-              autocomplete="name"
-            >
+            <input type="email" id="pm-auth-email" placeholder="you@example.com" required>
           </label>
 
           <label class="pm-auth-field">
             <span>Password</span>
-            <input
-              type="password"
-              id="pm-auth-password"
-              name="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-              minlength="6"
-              required
-            >
+            <input type="password" id="pm-auth-password" placeholder="Enter password" required>
           </label>
 
-          <label
-            class="pm-auth-field"
-            id="pm-auth-confirm-field"
-            style="display:none"
-          >
-            <span>Confirm Password</span>
-            <input
-              type="password"
-              id="pm-auth-confirm"
-              name="confirmPassword"
-              placeholder="Re-enter your password"
-              autocomplete="new-password"
-            >
-          </label>
-
-          <button
-            type="submit"
-            id="pm-auth-submit"
-            class="pm-auth-button pm-auth-primary"
-          >
+          <button type="submit" id="pm-auth-submit" class="pm-auth-button" style="background:#d97706; color:#fff; border:none; margin-top:6px;">
             Log In
           </button>
         </form>
-
-        <div
-          class="pm-auth-divider"
-          id="pm-auth-divider"
-        >
-          OR
-        </div>
-
-        <button
-          type="button"
-          id="pm-google-button"
-          class="pm-auth-button pm-auth-google"
-        >
-          Continue with Google
-        </button>
-
-        <div class="pm-auth-links">
-          <button
-            type="button"
-            id="pm-auth-forgot"
-            class="pm-auth-link"
-          >
-            Forgot Password?
-          </button>
-
-          <button
-            type="button"
-            id="pm-auth-switch"
-            class="pm-auth-link"
-          >
-            Create a new account
-          </button>
-        </div>
-
-        <div class="pm-auth-note">
-          Preach Mate by:paulm
-        </div>
       </div>
     `;
 
     document.body.appendChild(overlay);
 
-    document.getElementById(
-      "pm-auth-close"
-    ).onclick = closeAuthDialog;
-
-    overlay.addEventListener(
-      "click",
-      function (event) {
-        if (event.target === overlay) {
-          closeAuthDialog();
-        }
-      }
-    );
-
-    document.getElementById(
-      "pm-auth-form"
-    ).onsubmit = handleAuthSubmit;
-
-    document.getElementById(
-      "pm-google-button"
-    ).onclick = signInWithGoogle;
-
-    document.getElementById(
-      "pm-auth-forgot"
-    ).onclick = function () {
-      if (currentAuthMode !== "forgot") {
-        currentAuthMode = "forgot";
-        updateAuthDialog();
-        return;
-      }
-
-      sendPasswordReset();
-    };
-
-    document.getElementById(
-      "pm-auth-switch"
-    ).onclick = function () {
-      openAuthDialog(
-        currentAuthMode === "register"
-          ? "login"
-          : "register"
-      );
-    };
-
-    document.addEventListener(
-      "keydown",
-      function (event) {
-        if (
-          event.key === "Escape" &&
-          overlay.classList.contains(
-            "pm-auth-visible"
-          )
-        ) {
-          closeAuthDialog();
-        }
-      }
-    );
+    document.getElementById("pm-auth-close").onclick = closeAuthDialog;
+    document.getElementById("pm-auth-form").onsubmit = handleAuthSubmit;
+    document.getElementById("pm-google-button").onclick = signInWithGoogle;
 
     return overlay;
   }
 
-  function openAuthDialog(mode) {
+  function openAuthDialog() {
     injectStyles();
-
     const overlay = ensureAuthDialog();
-
-    currentAuthMode = mode || "login";
-
-    updateAuthDialog();
-
-    overlay.classList.add(
-      "pm-auth-visible"
-    );
-
+    overlay.classList.add("pm-auth-visible");
     document.body.style.overflow = "hidden";
   }
 
   function closeAuthDialog() {
-    const overlay = document.getElementById(
-      "pm-auth-overlay"
-    );
-
-    if (overlay) {
-      overlay.classList.remove(
-        "pm-auth-visible"
-      );
-    }
-
+    const overlay = document.getElementById("pm-auth-overlay");
+    if (overlay) overlay.classList.remove("pm-auth-visible");
     document.body.style.overflow = "";
   }
 
-  function updateAuthDialog() {
-    const registerMode =
-      currentAuthMode === "register";
-
-    const forgotMode =
-      currentAuthMode === "forgot";
-
-    const heading = document.getElementById(
-      "pm-auth-heading"
-    );
-
-    const subtitle = document.getElementById(
-      "pm-auth-subtitle"
-    );
-
-    const submit = document.getElementById(
-      "pm-auth-submit"
-    );
-
-    const nameField = document.getElementById(
-      "pm-auth-name-field"
-    );
-
-    const confirmField = document.getElementById(
-      "pm-auth-confirm-field"
-    );
-
-    const passwordInput = document.getElementById(
-      "pm-auth-password"
-    );
-
-    const confirmInput = document.getElementById(
-      "pm-auth-confirm"
-    );
-
-    const nameInput = document.getElementById(
-      "pm-auth-name"
-    );
-
-    const googleButton = document.getElementById(
-      "pm-google-button"
-    );
-
-    const divider = document.getElementById(
-      "pm-auth-divider"
-    );
-
-    const forgotButton = document.getElementById(
-      "pm-auth-forgot"
-    );
-
-    const switchButton = document.getElementById(
-      "pm-auth-switch"
-    );
-
-    if (registerMode) {
-      heading.textContent = "Create Account";
-      subtitle.textContent =
-        "Create your Preach Mate account.";
-      submit.textContent = "Create Account";
-
-    } else if (forgotMode) {
-      heading.textContent = "Reset Password";
-      subtitle.textContent =
-        "Enter your email to receive a password reset link.";
-      submit.textContent = "Send Reset Link";
-
-    } else {
-      heading.textContent = "Welcome Back";
-      subtitle.textContent =
-        "Sign in to your Preach Mate account.";
-      submit.textContent = "Log In";
+  async function signInWithGoogle() {
+    if (authBusy || !auth) return;
+    setAuthBusy(true);
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const result = await auth.signInWithPopup(provider);
+      currentUser = result.user || null;
+      closeAuthDialog();
+      renderAccountPanel();
+      showToast("Signed in successfully!");
+    } catch (error) {
+      showToast(getFriendlyError(error));
+    } finally {
+      setAuthBusy(false);
     }
-
-    nameField.style.display =
-      registerMode ? "block" : "none";
-
-    confirmField.style.display =
-      registerMode ? "block" : "none";
-
-    passwordInput.parentElement.style.display =
-      forgotMode ? "none" : "block";
-
-    passwordInput.required = !forgotMode;
-    confirmInput.required = registerMode;
-    nameInput.required = false;
-
-    googleButton.style.display =
-      forgotMode ? "none" : "block";
-
-    divider.style.display =
-      forgotMode ? "none" : "flex";
-
-    forgotButton.style.display =
-      forgotMode ? "none" : "block";
-
-    switchButton.style.display =
-      forgotMode ? "none" : "block";
-
-    switchButton.textContent =
-      registerMode
-        ? "Already have an account? Log In"
-        : "Create a new account";
-
-    clearAuthMessage();
   }
 
-  function showAuthMessage(message, success) {
-    const box = document.getElementById(
-      "pm-auth-message"
-    );
+  async function handleAuthSubmit(e) {
+    e.preventDefault();
+    if (authBusy || !auth) return;
 
-    if (!box) {
-      showToast(message);
-      return;
+    setAuthBusy(true);
+    const email = document.getElementById("pm-auth-email").value.trim();
+    const password = document.getElementById("pm-auth-password").value;
+
+    try {
+      const result = await auth.signInWithEmailAndPassword(email, password);
+      currentUser = result.user || null;
+      closeAuthDialog();
+      renderAccountPanel();
+      showToast("Logged in successfully!");
+    } catch (error) {
+      showToast(getFriendlyError(error));
+    } finally {
+      setAuthBusy(false);
     }
-
-    box.textContent = message;
-    box.style.display = "block";
-
-    box.classList.toggle(
-      "pm-auth-success",
-      Boolean(success)
-    );
-  }
-
-  function clearAuthMessage() {
-    const box = document.getElementById(
-      "pm-auth-message"
-    );
-
-    if (!box) return;
-
-    box.textContent = "";
-    box.style.display = "none";
-    box.classList.remove(
-      "pm-auth-success"
-    );
   }
 
   function setAuthBusy(busy) {
     authBusy = Boolean(busy);
-
-    const ids = [
-      "pm-auth-submit",
-      "pm-google-button",
-      "pm-auth-forgot",
-      "pm-auth-switch",
-      "pm-auth-close"
-    ];
-
-    ids.forEach(function (id) {
-      const element = document.getElementById(id);
-
-      if (element) {
-        element.disabled = authBusy;
-      }
-    });
-
-    const submit = document.getElementById(
-      "pm-auth-submit"
-    );
-
-    if (submit && authBusy) {
-      submit.textContent = "Please wait...";
-    } else if (submit) {
-      if (currentAuthMode === "register") {
-        submit.textContent = "Create Account";
-      } else if (currentAuthMode === "forgot") {
-        submit.textContent = "Send Reset Link";
-      } else {
-        submit.textContent = "Log In";
-      }
-    }
-
-    const googleButton = document.getElementById(
-      "pm-google-button"
-    );
-
-    if (googleButton) {
-      googleButton.textContent = authBusy
-        ? "Connecting to Google..."
-        : "Continue with Google";
-    }
+    const submit = document.getElementById("pm-auth-submit");
+    const google = document.getElementById("pm-google-button");
+    if (submit) submit.disabled = authBusy;
+    if (google) google.disabled = authBusy;
   }
-
-  /* ==========================================
-     GOOGLE SIGN-IN
-     ========================================== */
-
-  async function signInWithGoogle() {
-    if (authBusy) return;
-
-    if (!window.firebase || !auth) {
-      showAuthMessage(
-        "Firebase is not ready. Refresh the app and try again."
-      );
-      return;
-    }
-
-    clearAuthMessage();
-    setAuthBusy(true);
-
-    try {
-      const provider =
-        new firebase.auth.GoogleAuthProvider();
-
-      provider.setCustomParameters({
-        prompt: "select_account"
-      });
-
-      const result = await auth.signInWithPopup(
-        provider
-      );
-
-      currentUser = result.user || null;
-
-      closeAuthDialog();
-      renderAccountPanel();
-
-      showToast(
-        "Google sign-in successful."
-      );
-
-    } catch (error) {
-      console.error(
-        "Google Sign-In Error:",
-        error
-      );
-
-      showAuthMessage(
-        getFriendlyError(error)
-      );
-
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  /* ==========================================
-     LOGIN / REGISTER
-     ========================================== */
-
-  async function handleAuthSubmit(event) {
-    event.preventDefault();
-
-    if (authBusy) return;
-
-    if (!auth) {
-      showAuthMessage(
-        "Firebase is not ready. Refresh the app."
-      );
-      return;
-    }
-
-    clearAuthMessage();
-    setAuthBusy(true);
-
-    const email = document.getElementById(
-      "pm-auth-email"
-    ).value.trim();
-
-    const password = document.getElementById(
-      "pm-auth-password"
-    ).value;
-
-    const name = document.getElementById(
-      "pm-auth-name"
-    ).value.trim();
-
-    const confirmPassword = document.getElementById(
-      "pm-auth-confirm"
-    ).value;
-
-    try {
-      if (currentAuthMode === "register") {
-        if (password.length < 6) {
-          throw new Error(
-            "Password must contain at least 6 characters."
-          );
-        }
-
-        if (password !== confirmPassword) {
-          throw new Error(
-            "Hindi magkapareho ang dalawang password."
-          );
-        }
-
-        const result =
-          await auth.createUserWithEmailAndPassword(
-            email,
-            password
-          );
-
-        if (name && result.user) {
-          await result.user.updateProfile({
-            displayName: name
-          });
-        }
-
-        if (result.user) {
-          try {
-            await result.user.sendEmailVerification();
-          } catch (verificationError) {
-            console.error(
-              "Verification email error:",
-              verificationError
-            );
-          }
-        }
-
-        currentUser = result.user || null;
-
-        closeAuthDialog();
-        renderAccountPanel();
-
-        showToast(
-          "Account created successfully."
-        );
-
-      } else if (currentAuthMode === "forgot") {
-        await auth.sendPasswordResetEmail(email);
-
-        showAuthMessage(
-          "Password reset link sent. Check your email.",
-          true
-        );
-
-      } else {
-        const result =
-          await auth.signInWithEmailAndPassword(
-            email,
-            password
-          );
-
-        currentUser = result.user || null;
-
-        closeAuthDialog();
-        renderAccountPanel();
-
-        showToast(
-          "Logged in successfully."
-        );
-      }
-
-    } catch (error) {
-      console.error(
-        "Authentication form error:",
-        error
-      );
-
-      showAuthMessage(
-        getFriendlyError(error)
-      );
-
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  /* ==========================================
-     PASSWORD RESET
-     ========================================== */
-
-  async function sendPasswordReset() {
-    if (authBusy) return;
-
-    if (!auth) {
-      showAuthMessage(
-        "Firebase is not ready. Refresh the app."
-      );
-      return;
-    }
-
-    const email = document.getElementById(
-      "pm-auth-email"
-    ).value.trim();
-
-    if (!email) {
-      showAuthMessage(
-        "Enter your email address first."
-      );
-
-      document.getElementById(
-        "pm-auth-email"
-      ).focus();
-
-      return;
-    }
-
-    clearAuthMessage();
-    setAuthBusy(true);
-
-    try {
-      await auth.sendPasswordResetEmail(email);
-
-      showAuthMessage(
-        "Password reset link sent. Check your email.",
-        true
-      );
-
-    } catch (error) {
-      console.error(
-        "Password reset error:",
-        error
-      );
-
-      showAuthMessage(
-        getFriendlyError(error)
-      );
-
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  /* ==========================================
-     EMAIL VERIFICATION
-     ========================================== */
-
-  async function sendVerificationEmail() {
-    if (!auth || !auth.currentUser) {
-      showToast("Please log in first.");
-      return;
-    }
-
-    try {
-      await auth.currentUser.sendEmailVerification();
-
-      showToast(
-        "Verification email sent. Check your inbox."
-      );
-
-    } catch (error) {
-      console.error(
-        "Email verification error:",
-        error
-      );
-
-      showToast(
-        getFriendlyError(error)
-      );
-    }
-  }
-
-  /* ==========================================
-     LOGOUT
-     ========================================== */
 
   async function logout() {
     if (!auth) return;
-
-    if (
-      !window.confirm(
-        "Mag-logout sa Preach Mate account?"
-      )
-    ) {
-      return;
-    }
-
+    if (!window.confirm("Mag-logout sa Preach Mate account?")) return;
     try {
       await auth.signOut();
-
       currentUser = null;
-
       renderAccountPanel();
-
-      showToast(
-        "Logged out successfully."
-      );
-
+      showToast("Logged out successfully.");
     } catch (error) {
-      console.error(
-        "Logout error:",
-        error
-      );
-
-      showToast(
-        getFriendlyError(error)
-      );
+      showToast(getFriendlyError(error));
     }
   }
-
-  /* ==========================================
-     START
-     ========================================== */
 
   function start() {
     injectStyles();
-
     ensureAuthDialog();
-
     initFirebase();
-
-    renderAccountPanel();
-
-    const observer = new MutationObserver(
-      function () {
-        if (
-          !document.getElementById(
-            "pm-account-panel"
-          )
-        ) {
-          renderAccountPanel();
-        }
-      }
-    );
-
-    observer.observe(
-      document.body,
-      {
-        childList: true,
-        subtree: true
-      }
-    );
   }
-
-  /* ==========================================
-     PUBLIC API
-     ========================================== */
 
   window.PreachMateFirebase = {
     initFirebase: initFirebase,
-    renderAccountPanel: renderAccountPanel,
     openAuthDialog: openAuthDialog,
     closeAuthDialog: closeAuthDialog,
     signInWithGoogle: signInWithGoogle,
-    sendPasswordReset: sendPasswordReset,
-    sendVerificationEmail: sendVerificationEmail,
     logout: logout,
-
-    getCurrentUser: function () {
-      return currentUser;
-    },
-
-    getFirestore: function () {
-      return db;
-    },
-
-    isReady: function () {
-      return authReady;
-    }
+    getCurrentUser: () => currentUser,
+    getFirestore: () => db,
+    isReady: () => authReady
   };
 
-  /* ==========================================
-     INITIALIZE
-     ========================================== */
-
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      start,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", start, { once: true });
   } else {
     start();
   }
