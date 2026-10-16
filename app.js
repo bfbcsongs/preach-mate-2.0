@@ -1422,6 +1422,59 @@ function getNextNumberSequence(lines) {
     const trimmed = lines[i].trim();
     if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
       numbersInCurrentRoman = []; // Reset kapag nakakita ng bagong Topic (♦️) o Roman Numeral
+    }
+    const numMatch = trimmed.match(/^(\d+)\./);
+    if (numMatch) {
+      numbersInCurrentRoman.push(parseInt(numMatch[1], 10));
+    }
+  }
+
+  if (numbersInCurrentRoman.length > 0) {
+    return Math.max(...numbersInCurrentRoman) + 1;
+  }
+  return 1;
+}
+
+// 3. Letter Sequence detector (Mother: Number / Roman / Topic)
+// Mag-rereset sa "a." kapag nakakita ng Number, Roman, o ♦️
+function getNextLetterSequence(lines) {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  let activeNumber = null;
+  let lettersInCurrentNumber = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
+      activeNumber = null;
+      lettersInCurrentNumber = [];
+    }
+
+    const numMatch = trimmed.match(/^(\d+)\./);
+    if (numMatch) {
+      activeNumber = numMatch[1];
+      lettersInCurrentNumber = []; // Reset sa bagong Number section
+    }
+
+    const letterMatch = trimmed.match(/^([a-z])\./i);
+    if (letterMatch && activeNumber !== null) {
+      const char = letterMatch[1].toLowerCase();
+      if (!lettersInCurrentNumber.includes(char)) {
+        lettersInCurrentNumber.push(char);
+      }
+    }
+  }
+
+  if (lettersInCurrentNumber.length > 0) {
+    const lastChar = lettersInCurrentNumber[lettersInCurrentNumber.length - 1];
+    const nextIndex = alphabet.indexOf(lastChar) + 1;
+    if (nextIndex > 0 && nextIndex < alphabet.length) {
+      return alphabet[nextIndex];
+    }
+  }
+
+  return "a";
+}
 
 
 /* ==========================================
@@ -1520,308 +1573,3 @@ function getNextNumberSequence(lines) {
     setInterval(checkForUpdates, CHECK_INTERVAL);
   });
 })();
-/* ==========================================
-   PREACH MATE — CURSOR-AWARE SMART OUTLINE FORMATTER
-   ========================================== */
-
-window.insertSmartOutline = function(type) {
-  const editor = document.getElementById("noteBody");
-  if (!editor) return;
-
-  editor.focus();
-
-  const selection = window.getSelection();
-  if (!selection || !selection.rangeCount) return;
-
-  const range = selection.getRangeAt(0);
-
-  // Make sure cursor is actually inside the editor
-  if (!editor.contains(range.startContainer)) return;
-
-  const lineInfo = getCurrentOutlineLine(editor, range);
-
-  let formattedPrefix = "";
-
-  switch (type) {
-
-    case "topic":
-      formattedPrefix = '<b>♦️ </b>';
-      break;
-
-    case "roman":
-      formattedPrefix =
-        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>' +
-        getNextRomanNumeral(lineInfo) +
-        '.</b>&nbsp;';
-      break;
-
-    case "number":
-      formattedPrefix =
-        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-        '<b>' +
-        getNextNumberSequence(lineInfo) +
-        '.</b>&nbsp;';
-      break;
-
-    case "letter":
-      formattedPrefix =
-        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-        '<b>' +
-        getNextLetterSequence(lineInfo) +
-        '.</b>&nbsp;';
-      break;
-
-    default:
-      return;
-  }
-
-  // Insert HTML at the exact cursor position
-  const tempDiv = document.createElement("div");
-  tempDiv.innerHTML = formattedPrefix;
-
-  const fragment = document.createDocumentFragment();
-
-  while (tempDiv.firstChild) {
-    fragment.appendChild(tempDiv.firstChild);
-  }
-
-  range.deleteContents();
-  range.insertNode(fragment);
-
-  // Put cursor immediately after inserted formatter
-  range.collapse(false);
-
-  selection.removeAllRanges();
-  selection.addRange(range);
-
-  if (typeof saveCurrentNote === "function") {
-    saveCurrentNote();
-  }
-};
-
-
-/* ==========================================
-   GET CURRENT LINE / POSITION
-   ========================================== */
-
-function getCurrentOutlineLine(editor, range) {
-
-  const textBefore = getTextBeforeCursor(editor, range);
-
-  const lines = textBefore
-    .replace(/\r/g, "")
-    .split("\n");
-
-  const currentLine = lines.length
-    ? lines[lines.length - 1]
-    : "";
-
-  return {
-    allLines: lines,
-    currentLine: currentLine,
-    textBefore: textBefore
-  };
-}
-
-
-/* ==========================================
-   GET TEXT BEFORE CURSOR
-   More reliable for contenteditable
-   ========================================== */
-
-function getTextBeforeCursor(editor, range) {
-
-  const preCaretRange = range.cloneRange();
-
-  preCaretRange.selectNodeContents(editor);
-
-  preCaretRange.setEnd(
-    range.startContainer,
-    range.startOffset
-  );
-
-  return preCaretRange.toString();
-}
-
-
-/* ==========================================
-   ROMAN NUMERAL
-   Mother level:
-   ♦️
-
-   Example:
-
-   ♦️ TOPIC
-      I.
-      II.
-      III.
-
-   Cursor after II. -> III.
-   ========================================== */
-
-function getNextRomanNumeral(info) {
-
-  const romans = [
-    "I",
-    "II",
-    "III",
-    "IV",
-    "V",
-    "VI",
-    "VII",
-    "VIII",
-    "IX",
-    "X",
-    "XI",
-    "XII",
-    "XIII",
-    "XIV",
-    "XV",
-    "XVI",
-    "XVII",
-    "XVIII",
-    "XIX",
-    "XX"
-  ];
-
-  let lastRoman = null;
-
-  for (let i = info.allLines.length - 1; i >= 0; i--) {
-
-    const line = info.allLines[i].trim();
-
-    // Topic resets Roman numbering
-    if (line.includes("♦️")) {
-      break;
-    }
-
-    const match = line.match(/^([IVXLCDM]+)\./i);
-
-    if (match) {
-      lastRoman = match[1].toUpperCase();
-      break;
-    }
-  }
-
-  if (!lastRoman) {
-    return "I";
-  }
-
-  const index = romans.indexOf(lastRoman);
-
-  if (index >= 0 && index < romans.length - 1) {
-    return romans[index + 1];
-  }
-
-  return "I";
-}
-
-
-/* ==========================================
-   NUMBER
-   Mother level:
-   Roman / ♦️
-
-   Example:
-
-   I.
-      1.
-      2.
-      3.
-
-   Cursor after 2. -> 3.
-   ========================================== */
-
-function getNextNumberSequence(info) {
-
-  let lastNumber = null;
-
-  for (let i = info.allLines.length - 1; i >= 0; i--) {
-
-    const line = info.allLines[i].trim();
-
-    // Parent levels reset numbering
-    if (
-      line.includes("♦️") ||
-      /^([IVXLCDM]+)\./i.test(line)
-    ) {
-      break;
-    }
-
-    const match = line.match(/^(\d+)\./);
-
-    if (match) {
-      lastNumber = parseInt(match[1], 10);
-      break;
-    }
-  }
-
-  if (lastNumber === null) {
-    return 1;
-  }
-
-  return lastNumber + 1;
-}
-
-
-/* ==========================================
-   LETTER
-   Mother level:
-   Number / Roman / ♦️
-
-   Example:
-
-   1.
-      a.
-      b.
-      c.
-
-   If cursor goes back after b.
-   and presses Letter:
-
-      a.
-      b.
-      c.
-
-   NOT another b.
-   ========================================== */
-
-function getNextLetterSequence(info) {
-
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-
-  let lastLetter = null;
-
-  for (let i = info.allLines.length - 1; i >= 0; i--) {
-
-    const line = info.allLines[i].trim();
-
-    // Parent levels reset letter numbering
-    if (
-      line.includes("♦️") ||
-      /^([IVXLCDM]+)\./i.test(line) ||
-      /^(\d+)\./.test(line)
-    ) {
-      break;
-    }
-
-    const match = line.match(/^([a-z])\./i);
-
-    if (match) {
-      lastLetter = match[1].toLowerCase();
-      break;
-    }
-  }
-
-  if (!lastLetter) {
-    return "a";
-  }
-
-  const index = alphabet.indexOf(lastLetter);
-
-  if (index >= 0 && index < alphabet.length - 1) {
-    return alphabet[index + 1];
-  }
-
-  return "a";
-}
