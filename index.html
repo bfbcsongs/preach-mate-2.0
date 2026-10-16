@@ -272,22 +272,25 @@
           </div>
         `;
 
-        document.getElementById("pm-drawer-do-update").onclick = async () => {
+                document.getElementById("pm-drawer-do-update").onclick = async () => {
           const btn = document.getElementById("pm-drawer-do-update");
           btn.textContent = "Updating...";
           btn.style.pointerEvents = "none";
           btn.style.opacity = "0.8";
 
           try {
+            // Updated key para sa atin bagong checker engine:
             if (serverData) {
-              localStorage.setItem("pm_last_update", JSON.stringify(serverData));
+              localStorage.setItem("pm_app_version", JSON.stringify(serverData));
             }
 
+            // Burahin ang lumang Cache Storage
             if ('caches' in window) {
               const keys = await caches.keys();
               await Promise.all(keys.map(key => caches.delete(key)));
             }
 
+            // Unregister para sa malinis na panibagong Service Worker fetch
             if ('serviceWorker' in navigator) {
               const registrations = await navigator.serviceWorker.getRegistrations();
               for (let registration of registrations) {
@@ -295,13 +298,14 @@
               }
             }
           } catch (e) {
-            console.log("Cache clear error:", e);
+            console.log("Update execution error:", e);
           }
 
-          window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
+          // Safe reload sequence na may timestamp parameter
+          window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
         };
       } else {
-        // Balik sa simpleng "VERSION: Latest"
+        // Balik sa VERSION: Latest status
         updateArea.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
             <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
@@ -314,10 +318,44 @@
     }
 
     window.addEventListener("load", () => {
-      setTimeout(checkForUpdates, 2000);
+      setTimeout(checkForUpdates, 1500);
       setInterval(checkForUpdates, CHECK_INTERVAL);
     });
   })();
+</script>
+
+<!-- SMART PWA INSTALL SCRIPT -->
+<script>
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const installBtn = document.getElementById("topbarInstallBtn");
+    if (!installBtn) return;
+
+    // Itago kung PWA standalone mode na
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      installBtn.style.display = 'none';
+      return;
+    }
+
+    installBtn.onclick = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      } else {
+        // Fallback Alert para sa mga lumang phone/browser na walang auto prompt
+        alert("Para ma-install ang Preach Mate sa phone mo:\n\n1. I-tap ang Menu icon (tatlong tuldok ⋮ sa kanang taas ng browser).\n2. Piliin ang 'Add to Home Screen' o 'Install App'.");
+      }
+    };
+  });
 </script>
 
 </body>
