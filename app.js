@@ -1417,7 +1417,6 @@ function insertSmartOutline(type) {
 
   const range = selection.getRangeAt(0);
   
-  // 1. Kunin ang kasalukuyang text sa editor para sa sequence calculation
   const fullText = editor.innerText || "";
   const lines = fullText.split('\n');
 
@@ -1425,7 +1424,7 @@ function insertSmartOutline(type) {
 
   switch (type) {
     case 'topic':
-      formattedPrefix = "♦️ ";
+      formattedPrefix = "<b>♦️ </b>";
       break;
 
     case 'roman':
@@ -1436,30 +1435,11 @@ function insertSmartOutline(type) {
       formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(lines) + ".</b>&nbsp;";
       break;
 
-    // Helper: Alamin ang kasunod na Letter (a -> b -> c -> d) nang hindi nadadali ng ordinaryong salita
-function getNextLetterSequence(lines) {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  for (let i = lines.length - 1; i >= 0; i--) {
-    // Hanapin lamang ang mga linyang may nag-iisang letrang sinusundan ng tuldok (hal. a., b., c.)
-    const match = lines[i].match(/(?:^|\s)([a-z])\./i);
-    if (match) {
-      const lastChar = match[1].toLowerCase();
-      // Siguraduhing letrang a hanggang z lamang ito (hindi kasama ang ibang salita tulad ng 's' sa 'select')
-      const nextIndex = alphabet.indexOf(lastChar) + 1;
-      if (nextIndex > 0 && nextIndex < alphabet.length) {
-        return alphabet[nextIndex];
-      }
-    }
-  }
-  return "a"; // Default kung wala pang 'a.'
-}
-
-
-  if (type === 'topic') {
-    formattedPrefix = "<b>♦️ </b>";
+    case 'letter':
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(lines) + ".</b>&nbsp;";
+      break;
   }
 
-  // 2. I-insert bilang HTML sa eksaktong posisyon ng cursor
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = formattedPrefix;
   const frag = document.createDocumentFragment();
@@ -1471,21 +1451,20 @@ function getNextLetterSequence(lines) {
   range.deleteContents();
   range.insertNode(frag);
   
-  // 3. Igalaw ang cursor sa dulo ng in-insert na prefix
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
 }
 
-// Helper: Alamin ang kasunod na Letter (a -> b -> c -> d)
+// Helper: Alamin ang kasunod na Letter (a -> b -> c -> d) nang hindi nadadali ng salitang tulad ng 'Select'
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/([a-z])\./i);
+    const match = lines[i].match(/(?:^|\s)([a-z])\./i);
     if (match) {
       const lastChar = match[1].toLowerCase();
       const nextIndex = alphabet.indexOf(lastChar) + 1;
-      if (nextIndex < alphabet.length) {
+      if (nextIndex > 0 && nextIndex < alphabet.length) {
         return alphabet[nextIndex];
       }
     }
