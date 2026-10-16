@@ -1573,3 +1573,138 @@ function getNextLetterSequence(lines) {
     setInterval(checkForUpdates, CHECK_INTERVAL);
   });
 })();
+/* ==========================================
+   PREACH MATE — CURSOR-AWARE SMART OUTLINE FORMATTER
+   ========================================== */
+window.insertSmartOutline = function(type) {
+  const editor = document.getElementById("noteBody");
+  if (!editor) return;
+
+  editor.focus();
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+
+  // KUNIN ANG TEXT MULA SA SIMULA HANGGANG SA KASALUKUYANG CURSOR
+  const preCaretRange = range.cloneRange();
+  preCaretRange.selectNodeContents(editor);
+  preCaretRange.setEnd(range.startContainer, range.startOffset);
+  
+  const textBeforeCursor = preCaretRange.toString();
+  const linesBeforeCursor = textBeforeCursor.split('\n');
+
+  let formattedPrefix = "";
+
+  switch (type) {
+    case 'topic':
+      formattedPrefix = "<b>♦️ </b>";
+      break;
+
+    case 'roman':
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;";
+      break;
+
+    case 'number':
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;";
+      break;
+
+    case 'letter':
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;";
+      break;
+  }
+
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = formattedPrefix;
+  const frag = document.createDocumentFragment();
+  let node;
+  while ((node = tempDiv.firstChild)) {
+    frag.appendChild(node);
+  }
+  
+  range.deleteContents();
+  range.insertNode(frag);
+  
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  if (typeof saveCurrentNote === "function") {
+    saveCurrentNote();
+  }
+};
+
+// 1. Roman Numeral sequence (mother: ♦️)
+function getNextRomanNumeral(lines) {
+  const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+  let lastRoman = null;
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    if (trimmed.includes("♦️")) {
+      break; // Stop and reset to I if we hit a topic above
+    }
+    const match = trimmed.match(/^([IVX]+)\./i);
+    if (match) {
+      lastRoman = match[1].toUpperCase();
+      break; // Get the closest Roman directly above the cursor
+    }
+  }
+
+  if (lastRoman) {
+    const nextIndex = romans.indexOf(lastRoman) + 1;
+    if (nextIndex > 0 && nextIndex < romans.length) {
+      return romans[nextIndex];
+    }
+  }
+  return "I";
+}
+
+// 2. Number sequence (mother: Roman / ♦️)
+function getNextNumberSequence(lines) {
+  let lastNumber = null;
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
+      break; // Stop and reset to 1 if we hit a Roman numeral or Topic above
+    }
+    const match = trimmed.match(/^(\d+)\./);
+    if (match) {
+      lastNumber = parseInt(match[1], 10);
+      break; // Get the closest Number directly above the cursor
+    }
+  }
+
+  if (lastNumber !== null) {
+    return lastNumber + 1;
+  }
+  return 1;
+}
+
+// 3. Letter sequence (mother: Number / Roman / ♦️)
+function getNextLetterSequence(lines) {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  let lastLetter = null;
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed) || /^(\d+)\./.test(trimmed)) {
+      break; // Stop and reset to 'a' if we hit a Number, Roman, or Topic above
+    }
+    const match = trimmed.match(/^([a-z])\./i);
+    if (match) {
+      lastLetter = match[1].toLowerCase();
+      break; // Get the closest Letter directly above the cursor
+    }
+  }
+
+  if (lastLetter) {
+    const nextIndex = alphabet.indexOf(lastLetter) + 1;
+    if (nextIndex > 0 && nextIndex < alphabet.length) {
+      return alphabet[nextIndex];
+    }
+  }
+
+  return "a";
+}
