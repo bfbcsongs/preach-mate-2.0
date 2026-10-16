@@ -1332,7 +1332,8 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — SMART OUTLINE FORMATTER (100% FIXED & GLOBAL)
+/* ==========================================
+   PREACH MATE — SMART OUTLINE FORMATTER (WITH AUTO-RESET PER MAIN)
    ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
@@ -1387,11 +1388,47 @@ window.insertSmartOutline = function(type) {
   }
 };
 
-// Helper: Alamin ang kasunod na Letter (a -> b -> c -> d)
+// 1. Roman Numeral (I, II, III...) -> Walang pinag-reresetan sa taas
+function getNextRomanNumeral(lines) {
+  const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    const match = trimmed.match(/^([IVX]+)\./i);
+    if (match) {
+      const lastRoman = match[1].toUpperCase();
+      const nextIndex = romans.indexOf(lastRoman) + 1;
+      if (nextIndex > 0 && nextIndex < romans.length) {
+        return romans[nextIndex];
+      }
+    }
+  }
+  return "I";
+}
+
+// 2. Number Sequence (1, 2, 3...) -> Mag-rereset sa 1 kapag umabot o nakakita ng Roman Numeral
+function getNextNumberSequence(lines) {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    if (/^([IVX]+)\./i.test(trimmed)) {
+      break; // Huminto at mag-reset sa 1 dahil lumipat na ng bagong Roman section
+    }
+    const match = trimmed.match(/^(\d+)\./);
+    if (match) {
+      return parseInt(match[1], 10) + 1;
+    }
+  }
+  return 1;
+}
+
+// 3. Letter Sequence (a, b, c...) -> Mag-rereset sa 'a' kapag umabot sa Number o Roman Numeral
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/(?:^|\s)([a-z])\./i);
+    const trimmed = lines[i].trim();
+    if (/^(\d+)\./.test(trimmed) || /^([IVX]+)\./i.test(trimmed)) {
+      break; // Huminto at mag-reset sa 'a' dahil lumipat na ng bagong Number o Roman section
+    }
+    const match = trimmed.match(/^([a-z])\./i);
     if (match) {
       const lastChar = match[1].toLowerCase();
       const nextIndex = alphabet.indexOf(lastChar) + 1;
@@ -1401,31 +1438,4 @@ function getNextLetterSequence(lines) {
     }
   }
   return "a";
-}
-
-// Helper: Alamin ang kasunod na Number (1 -> 2 -> 3)
-function getNextNumberSequence(lines) {
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/(\d+)\./);
-    if (match) {
-      return parseInt(match[1], 10) + 1;
-    }
-  }
-  return 1;
-}
-
-// Helper: Alamin ang kasunod na Roman Numeral (I -> II -> III -> IV)
-function getNextRomanNumeral(lines) {
-  const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/([IVX]+)\./i);
-    if (match) {
-      const lastRoman = match[1].toUpperCase();
-      const nextIndex = romans.indexOf(lastRoman) + 1;
-      if (nextIndex < romans.length) {
-        return romans[nextIndex];
-      }
-    }
-  }
-  return "I";
 }
