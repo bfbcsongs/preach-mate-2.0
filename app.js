@@ -1332,7 +1332,7 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — SMART OUTLINE FORMATTER (SCOPE-AWARE SIBLING DETECTOR)
+   PREACH MATE — SMART OUTLINE FORMATTER (HIERARCHY MOTHER RESET)
    ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
@@ -1386,18 +1386,25 @@ window.insertSmartOutline = function(type) {
   }
 };
 
-// 1. Roman Numeral sequence detector
+// 1. Roman Numeral sequence detector (Mother: ♦️ Topic)
+// Mag-rereset sa "I." kapag nakakita ng ♦️ sa itaas
 function getNextRomanNumeral(lines) {
   const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
-  let lastRoman = null;
+  let romansInCurrentTopic = [];
+
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
-    const match = trimmed.match(/^([IVX]+)\./i);
-    if (match) {
-      lastRoman = match[1].toUpperCase();
+    if (trimmed.includes("♦️")) {
+      romansInCurrentTopic = []; // Reset kapag nakakita ng bagong Topic (♦️)
+    }
+    const romanMatch = trimmed.match(/^([IVX]+)\./i);
+    if (romanMatch) {
+      romansInCurrentTopic.push(romanMatch[1].toUpperCase());
     }
   }
-  if (lastRoman) {
+
+  if (romansInCurrentTopic.length > 0) {
+    const lastRoman = romansInCurrentTopic[romansInCurrentTopic.length - 1];
     const nextIndex = romans.indexOf(lastRoman) + 1;
     if (nextIndex > 0 && nextIndex < romans.length) {
       return romans[nextIndex];
@@ -1406,29 +1413,30 @@ function getNextRomanNumeral(lines) {
   return "I";
 }
 
-// 2. Number Sequence detector (Scope-aware: checks current Roman section)
+// 2. Number Sequence detector (Mother: Roman Numeral / Topic)
+// Mag-rereset sa "1." kapag nakakita ng Roman o ♦️
 function getNextNumberSequence(lines) {
-  let numbersInCurrentSection = [];
+  let numbersInCurrentRoman = [];
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
-    const romanMatch = trimmed.match(/^([IVX]+)\./i);
-    if (romanMatch) {
-      numbersInCurrentSection = []; // Reset kapag lumipat ng bagong Roman section
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
+      numbersInCurrentRoman = []; // Reset kapag nakakita ng bagong Topic (♦️) o Roman Numeral
     }
     const numMatch = trimmed.match(/^(\d+)\./);
     if (numMatch) {
-      numbersInCurrentSection.push(parseInt(numMatch[1], 10));
+      numbersInCurrentRoman.push(parseInt(numMatch[1], 10));
     }
   }
 
-  if (numbersInCurrentSection.length > 0) {
-    return Math.max(...numbersInCurrentSection) + 1;
+  if (numbersInCurrentRoman.length > 0) {
+    return Math.max(...numbersInCurrentRoman) + 1;
   }
   return 1;
 }
 
-// 3. Letter Sequence detector (Scope-aware: tracks siblings strictly under the current active number)
+// 3. Letter Sequence detector (Mother: Number / Roman / Topic)
+// Mag-rereset sa "a." kapag nakakita ng Number, Roman, o ♦️
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   let activeNumber = null;
@@ -1437,8 +1445,7 @@ function getNextLetterSequence(lines) {
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
     
-    // Kapag nakakita ng Roman o bagong Number, i-reset ang scope tracking
-    if (/^([IVX]+)\./i.test(trimmed)) {
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
       activeNumber = null;
       lettersInCurrentNumber = [];
     }
@@ -1446,7 +1453,7 @@ function getNextLetterSequence(lines) {
     const numMatch = trimmed.match(/^(\d+)\./);
     if (numMatch) {
       activeNumber = numMatch[1];
-      lettersInCurrentNumber = []; // Reset kapag lumipat ng bagong Number section
+      lettersInCurrentNumber = []; // Reset sa bagong Number section
     }
 
     const letterMatch = trimmed.match(/^([a-z])\./i);
