@@ -170,6 +170,7 @@
 </section>
 
 <div class="editor-toolbar hidden" id="editorToolbar">
+  <!-- Existing Formatting Buttons -->
   <button class="fmt-btn" id="btnUndo" title="Undo" aria-label="Undo">↶</button>
   <button class="fmt-btn" id="btnRedo" title="Redo" aria-label="Redo">↷</button>
   <button class="fmt-btn" id="btnBold" title="Bold"><b>B</b></button>
@@ -179,6 +180,13 @@
   <button class="fmt-btn" id="btnTextColor" title="Choose font color">◉</button>
   <button class="fmt-btn" id="btnFontMinus" title="Decrease size">−</button>
   <button class="fmt-btn" id="btnFontPlus" title="Increase size">+</button>
+
+  <!-- 👇 BAGONG IDINAGDAG NA SMART OUTLINE BUTTONS -->
+  <span style="width: 1px; background: #3f3f46; margin: 0 4px;"></span> <!-- Divider line -->
+  <button class="fmt-btn" type="button" onclick="insertSmartOutline('topic')" title="Topic">♦️</button>
+  <button class="fmt-btn" type="button" onclick="insertSmartOutline('roman')" title="Main Point (I.)">I.</button>
+  <button class="fmt-btn" type="button" onclick="insertSmartOutline('number')" title="Sub-point (1.)">1.</button>
+  <button class="fmt-btn" type="button" onclick="insertSmartOutline('letter')" title="Detail (a.)">a.</button>
 </div>
 
 <div class="color-palette hidden" id="colorPalette">
