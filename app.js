@@ -1568,3 +1568,98 @@ function showMessengerInstallGuide() {
     modal.style.display = "flex";
   }
 }
+/* ==========================================
+   PREACH MATE — SMART OUTLINE FORMATTER
+   ========================================== */
+
+function insertSmartOutline(type) {
+  const textarea = document.getElementById("note-editor");
+  if (!textarea) return;
+
+  const start = textarea.selectionStart;
+  const text = textarea.value;
+
+  // 1. Hanapin ang simula ng kasalukuyang linya
+  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+  const currentLine = text.substring(lineStart, start);
+
+  // 2. Kunin din ang buong nakaraang text para sa context ng sequence
+  const textBeforeCursor = text.substring(0, start);
+  const lines = textBeforeCursor.split('\n');
+
+  let formattedPrefix = "";
+
+  switch (type) {
+    case 'topic':
+      // Level 1: Topic (♦️) — Walang indent
+      formattedPrefix = "**♦️ ";
+      break;
+
+    case 'roman':
+      // Level 2: Roman Numerals (I. -> II. -> III. -> IV. -> V.)
+      formattedPrefix = "     **" + getNextRomanNumeral(lines) + ".** ";
+      break;
+
+    case 'number':
+      // Level 3: Numbers (1. -> 2. -> 3. -> 4.)
+      formattedPrefix = "       **" + getNextNumberSequence(lines) + ".** ";
+      break;
+
+    case 'letter':
+      // Level 4: Letters (a. -> b. -> c. -> d.)
+      formattedPrefix = "         **" + getNextLetterSequence(lines) + ".** ";
+      break;
+  }
+
+  // 3. I-insert ang prefix sa kasalukuyang linya
+  const updatedText = text.substring(0, lineStart) + formattedPrefix + text.substring(start);
+  textarea.value = updatedText;
+
+  // 4. Ilagay ang cursor pagkatapos ng bagong in-insert na prefix
+  const newCursorPos = lineStart + formattedPrefix.length;
+  textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+  textarea.focus();
+}
+
+// Helper: Alamin ang kasunod na Letter (a -> b -> c -> d)
+function getNextLetterSequence(lines) {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const match = lines[i].match(/\*\*([a-z])\.\*\*/i);
+    if (match) {
+      const lastChar = match[1].toLowerCase();
+      const nextIndex = alphabet.indexOf(lastChar) + 1;
+      if (nextIndex < alphabet.length) {
+        return alphabet[nextIndex];
+      }
+    }
+  }
+  return "a"; // Default kung wala pang nakaraang 'a.'
+}
+
+// Helper: Alamin ang kasunod na Number (1 -> 2 -> 3)
+function getNextNumberSequence(lines) {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const match = lines[i].match(/\*\*(\d+)\.\*\*/);
+    if (match) {
+      return parseInt(match[1], 10) + 1;
+    }
+  }
+  return 1; // Default kung wala pang nakaraang number
+}
+
+// Helper: Alamin ang kasunod na Roman Numeral (I -> II -> III -> IV)
+function getNextRomanNumeral(lines) {
+  const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const match = lines[i].match(/\*\*([IVX]+)\.\*\*/i);
+    if (match) {
+      const lastRoman = match[1].toUpperCase();
+      const nextIndex = romans.indexOf(lastRoman) + 1;
+      if (nextIndex < romans.length) {
+        return romans[nextIndex];
+      }
+    }
+  }
+  return "I"; // Default kung wala pang nakaraang Roman numeral
+}
