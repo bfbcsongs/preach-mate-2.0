@@ -1332,82 +1332,9 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — SMART PWA INSTALLATION FLOW
+   PREACH MATE — SMART OUTLINE FORMATTER (100% FIXED & GLOBAL)
    ========================================== */
-window.deferredPwaPrompt = null;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  window.deferredPwaPrompt = e;
-});
-
-function isMessengerBrowser() {
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
-  return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Messenger") > -1);
-}
-
-function handleInstallApp() {
-  if (isMessengerBrowser()) {
-    showMessengerInstallGuide();
-    return;
-  }
-
-  if (window.deferredPwaPrompt) {
-    window.deferredPwaPrompt.prompt();
-    window.deferredPwaPrompt.userChoice.then((choiceResult) => {
-      window.deferredPwaPrompt = null;
-    });
-  } else {
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    if (isPWA) {
-      alert("Naka-install na ang Preach Mate sa iyong phone! 🎉");
-    } else {
-      alert("Para ma-install ang Preach Mate:\n\n1. I-tap ang Menu icon (3 dots ⋮ sa Chrome).\n2. Piliin ang 'Add to Home Screen' o 'Install App'.");
-    }
-  }
-}
-
-function showMessengerInstallGuide() {
-  let modal = document.getElementById("pm-messenger-guide-modal");
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "pm-messenger-guide-modal";
-    modal.style.cssText = `
-      position: fixed; inset: 0; z-index: 999999;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
-      display: flex; align-items: center; justify-content: center; padding: 20px;
-      font-family: system-ui, -apple-system, sans-serif;
-    `;
-    modal.innerHTML = `
-      <div style="background: #18181b; color: #fff; padding: 24px; border-radius: 20px; max-width: 360px; text-align: center; border: 1px solid #3f3f46; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
-        <div style="font-size: 42px; margin-bottom: 8px;">📲</div>
-        <h3 style="margin: 0 0 12px; font-size: 18px; color: #60a5fa; font-weight: 700;">Paano I-install ang App</h3>
-        
-        <div style="text-align: left; font-size: 13px; color: #e4e4e7; line-height: 1.6; margin-bottom: 20px; background: #27272a; padding: 14px 16px; border-radius: 12px; border: 1px solid #3f3f46;">
-          <p style="margin: 0 0 10px;"><b>Step 1:</b> I-tap ang <b>3 dots (•••)</b> sa kanang itaas ng Messenger.</p>
-          <p style="margin: 0 0 10px;"><b>Step 2:</b> Piliin ang <b>"Open in browser"</b> para lumabas sa Chrome.</p>
-          <p style="margin: 0;"><b>Step 3:</b> Sa Chrome, i-tap ulit ang <b>3 dots (⋮)</b> at piliin ang <b>"Add to Home Screen"</b> o <b>"Install App"</b>.</p>
-        </div>
-
-        <button id="pm-close-guide" style="width: 100%; min-height: 44px; background: #2563eb; color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer;">
-          Naintindihan Ko
-        </button>
-      </div>
-    `;
-    document.body.appendChild(modal);
-    document.getElementById("pm-close-guide").onclick = () => {
-      modal.style.display = "none";
-    };
-  } else {
-    modal.style.display = "flex";
-  }
-}
-
-/* ==========================================
-   PREACH MATE — SMART OUTLINE FORMATTER (FOR CONTENTEDITABLE)
-   ========================================== */
-
-function insertSmartOutline(type) {
+window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
   if (!editor) return;
 
@@ -1454,9 +1381,13 @@ function insertSmartOutline(type) {
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
-}
+  
+  if (typeof saveCurrentNote === "function") {
+    saveCurrentNote();
+  }
+};
 
-// Helper: Alamin ang kasunod na Letter (a -> b -> c -> d) nang hindi nadadali ng salitang tulad ng 'Select'
+// Helper: Alamin ang kasunod na Letter (a -> b -> c -> d)
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   for (let i = lines.length - 1; i >= 0; i--) {
