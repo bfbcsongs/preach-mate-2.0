@@ -1422,59 +1422,6 @@ function getNextNumberSequence(lines) {
     const trimmed = lines[i].trim();
     if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
       numbersInCurrentRoman = []; // Reset kapag nakakita ng bagong Topic (♦️) o Roman Numeral
-    }
-    const numMatch = trimmed.match(/^(\d+)\./);
-    if (numMatch) {
-      numbersInCurrentRoman.push(parseInt(numMatch[1], 10));
-    }
-  }
-
-  if (numbersInCurrentRoman.length > 0) {
-    return Math.max(...numbersInCurrentRoman) + 1;
-  }
-  return 1;
-}
-
-// 3. Letter Sequence detector (Mother: Number / Roman / Topic)
-// Mag-rereset sa "a." kapag nakakita ng Number, Roman, o ♦️
-function getNextLetterSequence(lines) {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  let activeNumber = null;
-  let lettersInCurrentNumber = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    
-    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
-      activeNumber = null;
-      lettersInCurrentNumber = [];
-    }
-
-    const numMatch = trimmed.match(/^(\d+)\./);
-    if (numMatch) {
-      activeNumber = numMatch[1];
-      lettersInCurrentNumber = []; // Reset sa bagong Number section
-    }
-
-    const letterMatch = trimmed.match(/^([a-z])\./i);
-    if (letterMatch && activeNumber !== null) {
-      const char = letterMatch[1].toLowerCase();
-      if (!lettersInCurrentNumber.includes(char)) {
-        lettersInCurrentNumber.push(char);
-      }
-    }
-  }
-
-  if (lettersInCurrentNumber.length > 0) {
-    const lastChar = lettersInCurrentNumber[lettersInCurrentNumber.length - 1];
-    const nextIndex = alphabet.indexOf(lastChar) + 1;
-    if (nextIndex > 0 && nextIndex < alphabet.length) {
-      return alphabet[nextIndex];
-    }
-  }
-
-  return "a";
-}
 
 
 /* ==========================================
