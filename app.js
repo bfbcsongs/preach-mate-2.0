@@ -1332,7 +1332,7 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER
+   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER (CUSTOM INDENTS + AUTO-UNBOLD)
    ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
@@ -1351,19 +1351,23 @@ window.insertSmartOutline = function(type) {
 
   switch (type) {
     case 'topic':
-      formattedPrefix = "<b>♦️ </b>";
+      // Topic Header (No indentation)
+      formattedPrefix = "<b>♦️ </b>&#8203;";
       break;
 
     case 'roman':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;";
+      // Roman Numeral (No indentation)
+      formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
       break;
 
     case 'number':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;";
+      // Number (2 spaces indentation)
+      formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
       break;
 
     case 'letter':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;";
+      // Letter (5 spaces indentation)
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
       break;
   }
 
@@ -1378,10 +1382,16 @@ window.insertSmartOutline = function(type) {
   range.deleteContents();
   range.insertNode(frag);
   
+  // Ilagay ang cursor sa pinakadulo sa UNBOLD zone
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
   
+  // I-turn off ang bold command sa browser context para sa kasunod na text
+  try {
+    document.execCommand("bold", false, null);
+  } catch(e) {}
+
   if (typeof saveCurrentNote === "function") {
     saveCurrentNote();
   }
@@ -1439,71 +1449,50 @@ function getNextRomanNumeral(lines) {
 function getNextNumberSequence(lines) {
   let lastNumber = null;
 
-/* ==========================================
-   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER (CUSTOM INDENTS + AUTO-UNBOLD)
-   ========================================== */
-window.insertSmartOutline = function(type) {
-  const editor = document.getElementById("noteBody");
-  if (!editor) return;
-
-  editor.focus();
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return;
-
-  const range = selection.getRangeAt(0);
-
-  // Kunin ang lahat ng text lines BAGO ang cursor position
-  const linesBeforeCursor = getLinesBeforeSelection(editor, range);
-
-  let formattedPrefix = "";
-
-  switch (type) {
-    case 'topic':
-      // Topic Header (No indentation)
-      formattedPrefix = "<b>♦️ </b>&#8203;";
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i];
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
+      break; // Reset sa "1." kapag may Roman Numeral o Topic sa itaas
+    }
+    const match = trimmed.match(/^(\d+)\./);
+    if (match) {
+      lastNumber = parseInt(match[1], 10);
       break;
-
-    case 'roman':
-      // Roman Numeral (No indentation)
-      formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
-      break;
-
-    case 'number':
-      // Number (2 spaces indentation)
-      formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
-      break;
-
-    case 'letter':
-      // Letter (5 spaces indentation)
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
-      break;
+    }
   }
 
-  const tempDiv = document.createElement("div");
-  tempDiv.innerHTML = formattedPrefix;
-  const frag = document.createDocumentFragment();
-  let node;
-  while ((node = tempDiv.firstChild)) {
-    frag.appendChild(node);
+  if (lastNumber !== null) {
+    return lastNumber + 1;
   }
-  
-  range.deleteContents();
-  range.insertNode(frag);
-  
-  // Ilagay ang cursor sa pinakadulo sa UNBOLD zone
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  // I-turn off ang bold command sa browser context para sa kasunod na text
-  try {
-    document.execCommand("bold", false, null);
-  } catch(e) {}
+  return 1;
+}
 
-  if (typeof saveCurrentNote === "function") {
-    saveCurrentNote();
+// 3. Letter sequence (mother: Number / Roman / ♦️)
+function getNextLetterSequence(lines) {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  let lastLetter = null;
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i];
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed) || /^(\d+)\./.test(trimmed)) {
+      break; // Reset sa "a." kapag may Number, Roman, o Topic sa itaas
+    }
+    const match = trimmed.match(/^([a-z])\./i);
+    if (match) {
+      lastLetter = match[1].toLowerCase();
+      break;
+    }
   }
-};
+
+  if (lastLetter) {
+    const nextIndex = alphabet.indexOf(lastLetter) + 1;
+    if (nextIndex > 0 && nextIndex < alphabet.length) {
+      return alphabet[nextIndex];
+    }
+  }
+
+  return "a";
+}
 
 
 /* ==========================================
