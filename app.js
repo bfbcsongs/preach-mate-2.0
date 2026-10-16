@@ -1332,7 +1332,6 @@ appStartupPromise
 })();
 
 /* ==========================================
-/* ==========================================
    PREACH MATE — SMART OUTLINE FORMATTER (WITH AUTO-RESET PER MAIN)
    ========================================== */
 window.insertSmartOutline = function(type) {
@@ -1388,7 +1387,7 @@ window.insertSmartOutline = function(type) {
   }
 };
 
-// 1. Roman Numeral (I, II, III...) -> Walang pinag-reresetan sa taas
+// 1. Roman Numeral (I, II, III...)
 function getNextRomanNumeral(lines) {
   const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -1405,12 +1404,12 @@ function getNextRomanNumeral(lines) {
   return "I";
 }
 
-// 2. Number Sequence (1, 2, 3...) -> Mag-rereset sa 1 kapag umabot o nakakita ng Roman Numeral
+// 2. Number Sequence (1, 2, 3...) -> Mag-rereset sa 1 kapag nakakita ng Roman Numeral
 function getNextNumberSequence(lines) {
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i].trim();
     if (/^([IVX]+)\./i.test(trimmed)) {
-      break; // Huminto at mag-reset sa 1 dahil lumipat na ng bagong Roman section
+      break; 
     }
     const match = trimmed.match(/^(\d+)\./);
     if (match) {
@@ -1420,13 +1419,13 @@ function getNextNumberSequence(lines) {
   return 1;
 }
 
-// 3. Letter Sequence (a, b, c...) -> Mag-rereset sa 'a' kapag umabot sa Number o Roman Numeral
+// 3. Letter Sequence (a, b, c...) -> Mag-rereset sa 'a' kapag nakakita ng Number o Roman Numeral
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i].trim();
     if (/^(\d+)\./.test(trimmed) || /^([IVX]+)\./i.test(trimmed)) {
-      break; // Huminto at mag-reset sa 'a' dahil lumipat na ng bagong Number o Roman section
+      break; 
     }
     const match = trimmed.match(/^([a-z])\./i);
     if (match) {
@@ -1439,3 +1438,102 @@ function getNextLetterSequence(lines) {
   }
   return "a";
 }
+
+
+/* ==========================================
+   PREACH MATE — AUTO UPDATE CHECKER ENGINE
+   ========================================== */
+(function () {
+  const CHECK_INTERVAL = 30 * 1000; // Titingin tuwing 30 seconds
+
+  function getLastKnownUpdate() {
+    return localStorage.getItem("pm_last_update") || "";
+  }
+
+  function checkForUpdates() {
+    // May ?t= timestamp para iwas cache sa browser!
+    fetch("./version.json?t=" + new Date().getTime(), { cache: "no-store" })
+      .then(res => res.json())
+      .then(data => {
+        const serverState = JSON.stringify(data);
+        const localState = getLastKnownUpdate();
+
+        if (!localState) {
+          localStorage.setItem("pm_last_update", serverState);
+          renderDrawerUpdate(false);
+          return;
+        }
+
+        if (serverState !== localState) {
+          renderDrawerUpdate(true, data);
+        } else {
+          renderDrawerUpdate(false);
+        }
+      })
+      .catch(err => console.log("Update check skipped:", err));
+  }
+
+  function renderDrawerUpdate(hasUpdate, serverData = null) {
+    const updateArea = document.getElementById("drawer-update-area");
+    if (!updateArea) return;
+
+    if (hasUpdate) {
+      const verStr = (serverData && serverData.version) ? ` (${serverData.version})` : "";
+      
+      updateArea.innerHTML = `
+        <div style="background: #18181b; color: #f9fafb; padding: 12px 14px; border-radius: 12px; border: 1px solid #3f3f46; display: flex; align-items: center; gap: 10px; font-size: 12px;">
+          <div style="flex: 1;">
+            <div style="font-weight: 700; color: #34d399; margin-bottom: 2px;">May bagong update!${verStr}</div>
+            <div style="color: #a1a1aa; font-size: 10px;">I-tap para makuha ang bagong features.</div>
+          </div>
+          <button id="pm-drawer-do-update" style="background: #d97706; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 11px;">
+            I-Update
+          </button>
+        </div>
+      `;
+
+      document.getElementById("pm-drawer-do-update").onclick = async () => {
+        const btn = document.getElementById("pm-drawer-do-update");
+        btn.textContent = "Updating...";
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.8";
+
+        try {
+          if (serverData) {
+            localStorage.setItem("pm_last_update", JSON.stringify(serverData));
+          }
+
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+          }
+
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+              await registration.unregister();
+            }
+          }
+        } catch (e) {
+          console.log("Update execution error:", e);
+        }
+
+        window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
+      };
+    } else {
+      updateArea.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
+          <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
+          <span style="background: rgba(255,255,255,0.1); color: inherit; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;">
+            Latest
+          </span>
+        </div>
+      `;
+    }
+  }
+
+  window.addEventListener("load", () => {
+    setTimeout(checkForUpdates, 1000);
+    setInterval(checkForUpdates, CHECK_INTERVAL);
+  });
+})();
