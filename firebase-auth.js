@@ -1,6 +1,6 @@
 /* ==========================================
-   PREACH MATE — FIREBASE AUTH & WARNING MODAL
-   Login • Google (Popup/Redirect) • PWA Guard
+   PREACH MATE — FIREBASE AUTH & OPTIONAL BANNER
+   Non-intrusive Login • Banner Bar • Google Auth
    ========================================== */
 
 (function () {
@@ -20,7 +20,6 @@
   let currentUser = null;
   let authReady = false;
   let authBusy = false;
-  let userSkippedLogin = false;
 
   function showToast(message) {
     if (typeof window.showToast === "function") {
@@ -85,19 +84,10 @@
               authReady = true;
 
               renderAccountPanel();
-              renderTopSyncBadge();
+              renderMainSigninBanner();
 
-              // SURIIN KUNG NAKA-STANDALONE (INSTALLED PWA) MODE NA ANG APP
-              const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-              // LALABAS LANG ANG AUTOMATIC POPUP MODAL KUNG NAKA-INSTALL NA NGA ANG APP AT HINDI PA LOGGED IN/SKIPPED
-              if (!currentUser && !userSkippedLogin && isPWA) {
-                setTimeout(() => {
-                  openAuthDialog();
-                }, 500);
-              } else if (currentUser) {
+              if (currentUser) {
                 closeAuthDialog();
-                closeWarningDialog();
               }
 
               window.dispatchEvent(
@@ -126,6 +116,21 @@
     const style = document.createElement("style");
     style.id = "pm-auth-styles";
     style.textContent = `
+      /* MAIN HOME SIGN-IN BANNER */
+      #pm-main-signin-banner {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #ffffff; padding: 10px 16px; margin: 10px 16px 4px 16px;
+        border-radius: 12px; display: flex; align-items: center; justify-content: space-between;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.25); transition: transform 0.2s ease;
+      }
+      #pm-main-signin-banner:active { transform: scale(0.98); }
+      .pm-banner-btn {
+        background: #ffffff; color: #1d4ed8; padding: 4px 12px; border-radius: 8px;
+        font-size: 11px; font-weight: 800; white-space: nowrap;
+      }
+
+      /* DRAWER BACKUP BAR */
       #pm-top-backup-bar {
         background: linear-gradient(135deg, #d97706, #b45309);
         color: #ffffff; padding: 10px 14px; margin: -16px -16px 12px -16px;
@@ -135,6 +140,8 @@
       .pm-backup-btn-text {
         background: #ffffff; color: #b45309; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800;
       }
+
+      /* ACCOUNT PANEL (SIGNED IN) */
       #pm-account-panel {
         margin-top: auto; padding: 12px 14px; border-radius: 12px;
         background: rgba(128,128,128,.1); border: 1px solid rgba(128,128,128,.2);
@@ -147,13 +154,15 @@
         font-size: 13px; font-weight: 600; cursor: pointer; text-align: center;
       }
       .pm-auth-danger { color: #ef4444; border-color: rgba(239,68,68,0.3); }
-      #pm-auth-overlay, #pm-warning-overlay {
+
+      /* MODALS OVERLAY */
+      #pm-auth-overlay {
         position: fixed; inset: 0; z-index: 999990; display: none;
         align-items: center; justify-content: center; padding: 16px;
         background: rgba(0,0,0,.80); backdrop-filter: blur(6px);
       }
-      #pm-auth-overlay.pm-auth-visible, #pm-warning-overlay.pm-auth-visible { display: flex; }
-      #pm-auth-modal, #pm-warning-modal {
+      #pm-auth-overlay.pm-auth-visible { display: flex; }
+      #pm-auth-modal {
         width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;
         position: relative; padding: 24px; border-radius: 20px;
         background: #18181b; color: #f9fafb; border: 1px solid #3f3f46;
@@ -172,15 +181,32 @@
       }
       .pm-auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: #71717a; font-size: 11px; }
       .pm-auth-divider::before, .pm-auth-divider::after { content: ""; flex: 1; height: 1px; background: #27272a; }
-      #pm-topbar-badge {
-        position: absolute; right: 14px; top: 12px; z-index: 100;
-        background: #78350f; color: #fef3c7; border: 1px solid #d97706;
-        padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
-        cursor: pointer; display: none; align-items: center; gap: 5px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      }
     `;
     document.head.appendChild(style);
+  }
+
+  // RENDER MAIN SCREEN SIGN-IN BANNER BAR
+  function renderMainSigninBanner() {
+    let banner = document.getElementById("pm-main-signin-banner");
+    const searchBar = document.querySelector(".searchbar");
+
+    if (!currentUser) {
+      if (!banner && searchBar) {
+        banner = document.createElement("div");
+        banner.id = "pm-main-signin-banner";
+        banner.innerHTML = `
+          <span>☁️ Sign in to secure your notes</span>
+          <span class="pm-banner-btn">SIGN IN</span>
+        `;
+        banner.onclick = () => openAuthDialog();
+        // Ilagay sa itaas ng searchbar
+        searchBar.parentNode.insertBefore(banner, searchBar);
+      } else if (banner) {
+        banner.style.display = "flex";
+      }
+    } else {
+      if (banner) banner.style.display = "none";
+    }
   }
 
   function findDrawer() {
@@ -189,24 +215,6 @@
       document.querySelector("#drawer") ||
       document.querySelector(".sidebar")
     );
-  }
-
-  function renderTopSyncBadge() {
-    let badge = document.getElementById("pm-topbar-badge");
-    const topbar = document.querySelector(".topbar") || document.querySelector("header") || document.body;
-
-    if (!currentUser && userSkippedLogin) {
-      if (!badge) {
-        badge = document.createElement("button");
-        badge.id = "pm-topbar-badge";
-        badge.innerHTML = `⚠️ Not Synced`;
-        badge.onclick = () => openAuthDialog();
-        topbar.appendChild(badge);
-      }
-      badge.style.display = "flex";
-    } else {
-      if (badge) badge.style.display = "none";
-    }
   }
 
   function renderAccountPanel() {
@@ -257,6 +265,9 @@
       overlay.id = "pm-auth-overlay";
       overlay.innerHTML = `
         <div id="pm-auth-modal" role="dialog">
+          <div style="display:flex; justify-content:flex-end;">
+            <button id="pm-auth-close" style="background:none; border:none; color:#a1a1aa; font-size:20px; cursor:pointer;">✕</button>
+          </div>
           <div style="font-size:36px; margin-bottom:8px;">☁️</div>
           <h2 style="margin:0 0 6px; font-size:20px;">Back Up Your Notes</h2>
           <p style="margin:0 0 18px; font-size:12px; color:#a1a1aa; line-height:1.4;">
@@ -285,85 +296,25 @@
               Log In with Email
             </button>
           </form>
-
-          <div style="margin-top:16px;">
-            <button type="button" id="pm-auth-skip" style="background:none; border:none; color:#71717a; font-size:12px; text-decoration:underline; cursor:pointer;">
-              SKIP
-            </button>
-          </div>
         </div>
       `;
       document.body.appendChild(overlay);
 
       document.getElementById("pm-auth-form").onsubmit = handleAuthSubmit;
       document.getElementById("pm-google-button").onclick = signInWithGoogle;
-      
-      document.getElementById("pm-auth-skip").onclick = () => {
-        closeAuthDialog();
-        openWarningDialog();
-      };
-    }
-
-    let warnOverlay = document.getElementById("pm-warning-overlay");
-    if (!warnOverlay) {
-      warnOverlay = document.createElement("div");
-      warnOverlay.id = "pm-warning-overlay";
-      warnOverlay.innerHTML = `
-        <div id="pm-warning-modal" role="dialog">
-          <div style="font-size:32px; margin-bottom:8px;">⚠️</div>
-          <h2 style="margin:0 0 8px; font-size:18px; color:#fef08a;">Unsaved Backup Warning</h2>
-          <p style="margin:0 0 20px; font-size:13px; color:#d4d4d8; line-height:1.5;">
-            Your notes are NOT backed up. Any edits will only stay on this browser until you log in.
-          </p>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <button type="button" id="pm-warn-login" class="pm-auth-button" style="background:#d97706; color:#fff; border:none;">
-              Log In Now
-            </button>
-            <button type="button" id="pm-warn-continue" class="pm-auth-button" style="background:#27272a; color:#a1a1aa; border:1px solid #3f3f46;">
-              Continue Without Backup
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(warnOverlay);
-
-      document.getElementById("pm-warn-login").onclick = () => {
-        closeWarningDialog();
-        openAuthDialog();
-      };
-
-      document.getElementById("pm-warn-continue").onclick = () => {
-        userSkippedLogin = true;
-        closeWarningDialog();
-        renderTopSyncBadge();
-        showToast("⚠️ Running without cloud backup.");
-      };
+      document.getElementById("pm-auth-close").onclick = closeAuthDialog;
     }
   }
 
   function openAuthDialog() {
     injectStyles();
     ensureAuthDialogs();
-    closeWarningDialog();
     document.getElementById("pm-auth-overlay").classList.add("pm-auth-visible");
     document.body.style.overflow = "hidden";
   }
 
   function closeAuthDialog() {
     const overlay = document.getElementById("pm-auth-overlay");
-    if (overlay) overlay.classList.remove("pm-auth-visible");
-    document.body.style.overflow = "";
-  }
-
-  function openWarningDialog() {
-    injectStyles();
-    ensureAuthDialogs();
-    document.getElementById("pm-warning-overlay").classList.add("pm-auth-visible");
-    document.body.style.overflow = "hidden";
-  }
-
-  function closeWarningDialog() {
-    const overlay = document.getElementById("pm-warning-overlay");
     if (overlay) overlay.classList.remove("pm-auth-visible");
     document.body.style.overflow = "";
   }
@@ -375,11 +326,9 @@
       provider.setCustomParameters({ prompt: "select_account" });
       const result = await auth.signInWithPopup(provider);
       currentUser = result.user || null;
-      userSkippedLogin = false;
       closeAuthDialog();
-      closeWarningDialog();
       renderAccountPanel();
-      renderTopSyncBadge();
+      renderMainSigninBanner();
       showToast("Signed in successfully!");
     } catch (error) {
       showToast(getFriendlyError(error));
@@ -396,11 +345,9 @@
     try {
       const result = await auth.signInWithEmailAndPassword(email, password);
       currentUser = result.user || null;
-      userSkippedLogin = false;
       closeAuthDialog();
-      closeWarningDialog();
       renderAccountPanel();
-      renderTopSyncBadge();
+      renderMainSigninBanner();
       showToast("Logged in successfully!");
     } catch (error) {
       showToast(getFriendlyError(error));
@@ -413,11 +360,9 @@
     try {
       await auth.signOut();
       currentUser = null;
-      userSkippedLogin = false;
       renderAccountPanel();
-      renderTopSyncBadge();
+      renderMainSigninBanner();
       showToast("Logged out successfully.");
-      openAuthDialog();
     } catch (error) {
       showToast(getFriendlyError(error));
     }
