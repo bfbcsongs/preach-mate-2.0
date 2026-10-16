@@ -1,6 +1,6 @@
 /* ==========================================
    PREACH MATE — FIREBASE AUTH & WARNING MODAL
-   Login • Google • Backup Notice • Skip Flow
+   Login • Google (Redirect) • Backup Notice • Skip Flow
    ========================================== */
 
 (function () {
@@ -77,6 +77,22 @@
         db = firebase.firestore();
       }
 
+      // Saluhin ang redirect result pagbalik galing sa Google Login
+      auth.getRedirectResult().then((result) => {
+        if (result && result.user) {
+          currentUser = result.user;
+          userSkippedLogin = false;
+          closeAuthDialog();
+          closeWarningDialog();
+          renderAccountPanel();
+          renderTopSyncBadge();
+          showToast("Signed in successfully with Google!");
+        }
+      }).catch((error) => {
+        console.error("Redirect login error:", error);
+        showToast(getFriendlyError(error));
+      });
+
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
           auth.onAuthStateChanged(
@@ -87,7 +103,6 @@
               renderAccountPanel();
               renderTopSyncBadge();
 
-              // Kapag naka-log out at hindi pa na-skip, lumitaw agad ang Backup Warning Modal
               if (!currentUser && !userSkippedLogin) {
                 setTimeout(() => {
                   openAuthDialog();
@@ -123,7 +138,6 @@
     const style = document.createElement("style");
     style.id = "pm-auth-styles";
     style.textContent = `
-      /* TOP DRAWER BACKUP BAR (LOGGED OUT) */
       #pm-top-backup-bar {
         background: linear-gradient(135deg, #d97706, #b45309);
         color: #ffffff; padding: 10px 14px; margin: -16px -16px 12px -16px;
@@ -133,37 +147,30 @@
       .pm-backup-btn-text {
         background: #ffffff; color: #b45309; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800;
       }
-
-      /* BOTTOM DRAWER ACCOUNT PANEL (LOGGED IN) */
       #pm-account-panel {
         margin-top: auto; padding: 12px 14px; border-radius: 12px;
         background: rgba(128,128,128,.1); border: 1px solid rgba(128,128,128,.2);
       }
       .pm-account-title { font-size: 13px; font-weight: 700; color: #34d399; margin-bottom: 3px; }
       .pm-account-subtitle { font-size: 12px; opacity: .8; line-height: 1.4; overflow-wrap: anywhere; margin-bottom: 10px; }
-
       .pm-auth-button {
         width: 100%; min-height: 42px; padding: 10px 13px; border: 1px solid rgba(128,128,128,.25);
         border-radius: 10px; background: transparent; color: inherit; font: inherit;
         font-size: 13px; font-weight: 600; cursor: pointer; text-align: center;
       }
       .pm-auth-danger { color: #ef4444; border-color: rgba(239,68,68,0.3); }
-
-      /* MODALS OVERLAY */
       #pm-auth-overlay, #pm-warning-overlay {
         position: fixed; inset: 0; z-index: 999990; display: none;
         align-items: center; justify-content: center; padding: 16px;
         background: rgba(0,0,0,.80); backdrop-filter: blur(6px);
       }
       #pm-auth-overlay.pm-auth-visible, #pm-warning-overlay.pm-auth-visible { display: flex; }
-
       #pm-auth-modal, #pm-warning-modal {
         width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;
         position: relative; padding: 24px; border-radius: 20px;
         background: #18181b; color: #f9fafb; border: 1px solid #3f3f46;
         box-shadow: 0 20px 70px rgba(0,0,0,.6); font-family: inherit; text-align: center;
       }
-
       .pm-auth-google-priority {
         background: #ffffff; color: #1f2937; border: 2px solid #e5e7eb;
         font-size: 14px; font-weight: 700; display: flex; align-items: center;
@@ -177,8 +184,6 @@
       }
       .pm-auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: #71717a; font-size: 11px; }
       .pm-auth-divider::before, .pm-auth-divider::after { content: ""; flex: 1; height: 1px; background: #27272a; }
-
-      /* TOPBAR NOT SYNCED BADGE */
       #pm-topbar-badge {
         position: absolute; right: 14px; top: 12px; z-index: 100;
         background: #78350f; color: #fef3c7; border: 1px solid #d97706;
@@ -257,12 +262,7 @@
     }
   }
 
-  /* ==========================================
-     MODALS SETUP (MAIN LOGIN & WARNING DIALOG)
-     ========================================== */
-
   function ensureAuthDialogs() {
-    // 1. MAIN LOGIN MODAL
     let overlay = document.getElementById("pm-auth-overlay");
     if (!overlay) {
       overlay = document.createElement("div");
@@ -275,7 +275,6 @@
             Log in your account to avoid losing your notes. Log in your email for backup.
           </p>
 
-          <!-- PRIORITY: GOOGLE LOGIN -->
           <button type="button" id="pm-google-button" class="pm-auth-button pm-auth-google-priority">
             <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
             Continue with Google
@@ -299,7 +298,6 @@
             </button>
           </form>
 
-          <!-- BOTTOM ACTION: SKIP -->
           <div style="margin-top:16px;">
             <button type="button" id="pm-auth-skip" style="background:none; border:none; color:#71717a; font-size:12px; text-decoration:underline; cursor:pointer;">
               SKIP
@@ -318,7 +316,6 @@
       };
     }
 
-    // 2. WARNING DIALOG (KAPAG INIS-SKIP)
     let warnOverlay = document.getElementById("pm-warning-overlay");
     if (!warnOverlay) {
       warnOverlay = document.createElement("div");
@@ -383,19 +380,13 @@
     document.body.style.overflow = "";
   }
 
+  // PWA-FRIENDLY GOOGLE SIGN IN GAMIT ANG REDIRECT
   async function signInWithGoogle() {
     if (authBusy || !auth) return;
     try {
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      const result = await auth.signInWithPopup(provider);
-      currentUser = result.user || null;
-      userSkippedLogin = false;
-      closeAuthDialog();
-      closeWarningDialog();
-      renderAccountPanel();
-      renderTopSyncBadge();
-      showToast("Signed in successfully!");
+      await auth.signInWithRedirect(provider);
     } catch (error) {
       showToast(getFriendlyError(error));
     }
