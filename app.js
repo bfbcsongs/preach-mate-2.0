@@ -1436,10 +1436,24 @@ function insertSmartOutline(type) {
       formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(lines) + ".</b>&nbsp;";
       break;
 
-    case 'letter':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(lines) + ".</b>&nbsp;";
-      break;
+    // Helper: Alamin ang kasunod na Letter (a -> b -> c -> d) nang hindi nadadali ng ordinaryong salita
+function getNextLetterSequence(lines) {
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
+  for (let i = lines.length - 1; i >= 0; i--) {
+    // Hanapin lamang ang mga linyang may nag-iisang letrang sinusundan ng tuldok (hal. a., b., c.)
+    const match = lines[i].match(/(?:^|\s)([a-z])\./i);
+    if (match) {
+      const lastChar = match[1].toLowerCase();
+      // Siguraduhing letrang a hanggang z lamang ito (hindi kasama ang ibang salita tulad ng 's' sa 'select')
+      const nextIndex = alphabet.indexOf(lastChar) + 1;
+      if (nextIndex > 0 && nextIndex < alphabet.length) {
+        return alphabet[nextIndex];
+      }
+    }
   }
+  return "a"; // Default kung wala pang 'a.'
+}
+
 
   if (type === 'topic') {
     formattedPrefix = "<b>♦️ </b>";
