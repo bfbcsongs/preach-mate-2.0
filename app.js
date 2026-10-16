@@ -1332,7 +1332,7 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — SMART OUTLINE FORMATTER (HIERARCHY MOTHER RESET)
+   PREACH MATE — CURSOR-AWARE SMART OUTLINE FORMATTER
    ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
@@ -1343,8 +1343,14 @@ window.insertSmartOutline = function(type) {
   if (!selection.rangeCount) return;
 
   const range = selection.getRangeAt(0);
-  const fullText = editor.innerText || "";
-  const lines = fullText.split('\n');
+
+  // KUNIN LAMANG ANG TEXT MULA SA SIMULA HANGGANG SA KASALUKUYANG CURSOR
+  const preCaretRange = range.cloneRange();
+  preCaretRange.selectNodeContents(editor);
+  preCaretRange.setEnd(range.startContainer, range.startOffset);
+  
+  const textBeforeCursor = preCaretRange.toString();
+  const linesBeforeCursor = textBeforeCursor.split('\n');
 
   let formattedPrefix = "";
 
@@ -1354,15 +1360,15 @@ window.insertSmartOutline = function(type) {
       break;
 
     case 'roman':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextRomanNumeral(lines) + ".</b>&nbsp;";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;";
       break;
 
     case 'number':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(lines) + ".</b>&nbsp;";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;";
       break;
 
     case 'letter':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(lines) + ".</b>&nbsp;";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;";
       break;
   }
 
@@ -1386,25 +1392,24 @@ window.insertSmartOutline = function(type) {
   }
 };
 
-// 1. Roman Numeral sequence detector (Mother: ♦️ Topic)
-// Mag-rereset sa "I." kapag nakakita ng ♦️ sa itaas
+// 1. Roman Numeral sequence (mother: ♦️)
 function getNextRomanNumeral(lines) {
   const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
-  let romansInCurrentTopic = [];
+  let lastRoman = null;
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i].trim();
     if (trimmed.includes("♦️")) {
-      romansInCurrentTopic = []; // Reset kapag nakakita ng bagong Topic (♦️)
+      break; // Huminto at mag-reset kung may makitang Topic sa itaas
     }
-    const romanMatch = trimmed.match(/^([IVX]+)\./i);
-    if (romanMatch) {
-      romansInCurrentTopic.push(romanMatch[1].toUpperCase());
+    const match = trimmed.match(/^([IVX]+)\./i);
+    if (match) {
+      lastRoman = match[1].toUpperCase();
+      break;
     }
   }
 
-  if (romansInCurrentTopic.length > 0) {
-    const lastRoman = romansInCurrentTopic[romansInCurrentTopic.length - 1];
+  if (lastRoman) {
     const nextIndex = romans.indexOf(lastRoman) + 1;
     if (nextIndex > 0 && nextIndex < romans.length) {
       return romans[nextIndex];
@@ -1413,61 +1418,47 @@ function getNextRomanNumeral(lines) {
   return "I";
 }
 
-// 2. Number Sequence detector (Mother: Roman Numeral / Topic)
-// Mag-rereset sa "1." kapag nakakita ng Roman o ♦️
+// 2. Number sequence (mother: Roman / ♦️)
 function getNextNumberSequence(lines) {
-  let numbersInCurrentRoman = [];
+  let lastNumber = null;
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i].trim();
     if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
-      numbersInCurrentRoman = []; // Reset kapag nakakita ng bagong Topic (♦️) o Roman Numeral
+      break; // Huminto at mag-reset kung makakita ng Roman numeral o Topic sa itaas
     }
-    const numMatch = trimmed.match(/^(\d+)\./);
-    if (numMatch) {
-      numbersInCurrentRoman.push(parseInt(numMatch[1], 10));
+    const match = trimmed.match(/^(\d+)\./);
+    if (match) {
+      lastNumber = parseInt(match[1], 10);
+      break;
     }
   }
 
-  if (numbersInCurrentRoman.length > 0) {
-    return Math.max(...numbersInCurrentRoman) + 1;
+  if (lastNumber !== null) {
+    return lastNumber + 1;
   }
   return 1;
 }
 
-// 3. Letter Sequence detector (Mother: Number / Roman / Topic)
-// Mag-rereset sa "a." kapag nakakita ng Number, Roman, o ♦️
+// 3. Letter sequence (mother: Number / Roman / ♦️)
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  let activeNumber = null;
-  let lettersInCurrentNumber = [];
+  let lastLetter = null;
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i].trim();
-    
-    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
-      activeNumber = null;
-      lettersInCurrentNumber = [];
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed) || /^(\d+)\./.test(trimmed)) {
+      break; // Huminto at mag-reset sa 'a' kung makakita ng Number, Roman, o Topic sa itaas
     }
-
-    const numMatch = trimmed.match(/^(\d+)\./);
-    if (numMatch) {
-      activeNumber = numMatch[1];
-      lettersInCurrentNumber = []; // Reset sa bagong Number section
-    }
-
-    const letterMatch = trimmed.match(/^([a-z])\./i);
-    if (letterMatch && activeNumber !== null) {
-      const char = letterMatch[1].toLowerCase();
-      if (!lettersInCurrentNumber.includes(char)) {
-        lettersInCurrentNumber.push(char);
-      }
+    const match = trimmed.match(/^([a-z])\./i);
+    if (match) {
+      lastLetter = match[1].toLowerCase();
+      break;
     }
   }
 
-  if (lettersInCurrentNumber.length > 0) {
-    const lastChar = lettersInCurrentNumber[lettersInCurrentNumber.length - 1];
-    const nextIndex = alphabet.indexOf(lastChar) + 1;
+  if (lastLetter) {
+    const nextIndex = alphabet.indexOf(lastLetter) + 1;
     if (nextIndex > 0 && nextIndex < alphabet.length) {
       return alphabet[nextIndex];
     }
