@@ -1332,7 +1332,7 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER (CUSTOM INDENTS + AUTO-UNBOLD)
+   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER (GUARANTEED UNBOLD CURSOR)
    ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
@@ -1344,7 +1344,7 @@ window.insertSmartOutline = function(type) {
 
   const range = selection.getRangeAt(0);
 
-  // Kunin ang lahat ng text lines BAGO ang cursor position gamit ang DOM Node Traversal
+  // Kunin ang lahat ng text lines BAGO ang cursor position
   const linesBeforeCursor = getLinesBeforeSelection(editor, range);
 
   let formattedPrefix = "";
@@ -1352,22 +1352,22 @@ window.insertSmartOutline = function(type) {
   switch (type) {
     case 'topic':
       // Topic Header (No indentation)
-      formattedPrefix = "<b>♦️ </b>&#8203;";
+      formattedPrefix = "<b>♦️ </b><span style='font-weight:normal;'>&#8203;";
       break;
 
     case 'roman':
       // Roman Numeral (No indentation)
-      formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
+      formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
       break;
 
     case 'number':
       // Number (2 spaces indentation)
-      formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
+      formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
       break;
 
     case 'letter':
       // Letter (5 spaces indentation)
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;&#8203;";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
       break;
   }
 
@@ -1382,15 +1382,10 @@ window.insertSmartOutline = function(type) {
   range.deleteContents();
   range.insertNode(frag);
   
-  // Ilagay ang cursor sa pinakadulo sa UNBOLD zone
+  // Ilagay ang cursor sa loob ng span na may font-weight: normal
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
-  
-  // I-turn off ang bold command sa browser context para sa kasunod na text
-  try {
-    document.execCommand("bold", false, null);
-  } catch(e) {}
 
   if (typeof saveCurrentNote === "function") {
     saveCurrentNote();
