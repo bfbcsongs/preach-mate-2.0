@@ -1082,4 +1082,22 @@ textarea {
   font-size: 14px;
   line-height: 1.6;
 }
+#editorToolbar {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 8px;
+  scrollbar-width: none; /* Para nalinisan iti mobile */
+}
+
+#editorToolbar::-webkit-scrollbar {
+  display: none; /* Isara ti default scrollbar bar */
+}
+
+#editorToolbar .fmt-btn {
+  flex-shrink: 0; /* Tapno saan a maipangit ti sukat ti botones */
+}
 
