@@ -391,10 +391,8 @@ function renderDrawerCategories(){
     holder.appendChild(b);
   });
 }
-/* ==========================================
-   SMOOTH & INSTANT CATEGORY DRAGGING ENGINE
-   ========================================== */
 
+/* CATEGORY DRAGGING ENGINE */
 function attachCategoryDrag(button, surface) {
   const isTabs = surface === "tabs";
   const container = isTabs ? $("categoryTabs") : $("drawerCategories");
@@ -404,19 +402,11 @@ function attachCategoryDrag(button, surface) {
   button.addEventListener("pointerdown", e => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (button.dataset.category === "All Notes") return;
-
-    // Sa drawer, kailangan sa handle humawak; sa tabs, kahit saan sa button
     if (!isTabs && !e.target.closest(".cat-drag-handle")) return;
 
     dragInfo = {
-      button,
-      container,
-      selector,
-      axis,
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      moved: false
+      button, container, selector, axis,
+      pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, moved: false
     };
   });
 
@@ -427,7 +417,6 @@ function attachCategoryDrag(button, surface) {
     const dy = e.clientY - dragInfo.startY;
     const distance = axis === "x" ? Math.abs(dx) : Math.abs(dy);
 
-    // 1. Smooth & Quick Activation (4px lang para napakadaling hilingin)
     if (!dragInfo.moved) {
       if (distance < 4) return;
       dragInfo.moved = true;
@@ -440,25 +429,19 @@ function attachCategoryDrag(button, surface) {
 
     if (e.cancelable) e.preventDefault();
 
-    // 2. Real-time Fluid Reordering Across Any Distance (e.g. 5th to 1st)
     const elements = [...container.querySelectorAll(selector)];
     const cursorCoord = axis === "x" ? e.clientX : e.clientY;
 
     for (const target of elements) {
       if (target === button || target.dataset.category === "All Notes") continue;
-
       const rect = target.getBoundingClientRect();
       const targetMid = axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
 
       if (cursorCoord < targetMid) {
-        if (button.nextElementSibling !== target) {
-          container.insertBefore(button, target);
-        }
+        if (button.nextElementSibling !== target) container.insertBefore(button, target);
         break;
       } else {
-        if (target.nextElementSibling !== button) {
-          container.insertBefore(button, target.nextElementSibling);
-        }
+        if (target.nextElementSibling !== button) container.insertBefore(button, target.nextElementSibling);
       }
     }
   });
@@ -472,7 +455,6 @@ function attachCategoryDrag(button, surface) {
       button.style.transform = "";
       button.style.zIndex = "";
 
-      // Re-index at i-save ang bagong pagkakasunod-sunod
       const reordered = [...container.querySelectorAll(selector)]
         .map(el => el.dataset.category)
         .filter(cat => cat && cat !== "All Notes");
@@ -488,14 +470,12 @@ function attachCategoryDrag(button, surface) {
 
       setTimeout(() => { suppressCategoryClick = false; }, 250);
     }
-
     dragInfo = null;
   };
 
   button.addEventListener("pointerup", finishDrag);
   button.addEventListener("pointercancel", finishDrag);
 }
-
 
 /* NOTES LIST */
 function renderNotes(){
@@ -865,25 +845,19 @@ function showFavorites(){
 function openDrawer(){$("drawerBackdrop").classList.remove("hidden")}
 function closeDrawer(){$("drawerBackdrop").classList.add("hidden")}
 
-/* EXPORT MANUAL BACKUP FILE (ONLY VIA DRAWER OR MANUAL BACKUP) */
 function exportNotes(){
   try{
     const backup={
-      app:"Preach Mate",
-      version:2,
-      exportedAt:new Date().toISOString(),
-      categories:categories,
-      notes:notes
+      app:"Preach Mate", version:2, exportedAt:new Date().toISOString(),
+      categories:categories, notes:notes
     };
     const jsonString = JSON.stringify(backup, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    
     const dateStr = new Date().toISOString().slice(0,10);
     a.href = url;
     a.download = `PreachMate_Backup_${dateStr}.json`;
-    
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -906,26 +880,11 @@ function restoreNotesFromFile(file){
         showToast("Invalid Preach Mate backup file.");
         return;
       }
-      const validNotes=data.notes.every(n=>
-        n&&typeof n.id==="string"&&typeof n.title==="string"&&typeof n.content==="string"
-      );
-      const validCategories=data.categories.every(c=>
-        typeof c==="string"&&c.trim().length>0
-      );
-      if(!validNotes||!validCategories){
-        showToast("Backup data is invalid.");
-        return;
-      }
       openDialog("Restore Backup?",`<p style="line-height:1.5;color:#4b5563">
         This will replace or merge your current notes and categories with the selected backup file.
         <br><br>Notes in backup: <b>${data.notes.length}</b>
         <br>Categories in backup: <b>${data.categories.length}</b>
       </p>`,()=>{
-        const oldNotes=notes;
-        const oldCategories=categories;
-        const oldActiveCategory=activeCategory;
-        const oldFavoritesOnly=favoritesOnly;
-
         notes=data.notes.map(n=>({...n,favorite:!!n.favorite,pinned:!!n.pinned}));
         categories=["All Notes",...new Set(data.categories.map(c=>c.trim()).filter(c=>c&&c!=="All Notes"))];
         notes.forEach(n=>{
@@ -933,15 +892,7 @@ function restoreNotesFromFile(file){
             categories.push(n.category);
           }
         });
-
-        if(!persist()){
-          notes=oldNotes;
-          categories=oldCategories;
-          activeCategory=oldActiveCategory;
-          favoritesOnly=oldFavoritesOnly;
-          return false;
-        }
-
+        if(!persist())return false;
         activeCategory="All Notes";
         favoritesOnly=false;
         $("searchInput").value="";
@@ -960,7 +911,7 @@ function restoreNotesFromFile(file){
   reader.readAsText(file);
 }
 
-/* TOOLBAR POSITION */
+/* TOOLBAR POSITION & SCROLLING */
 function updateToolbarPosition(){
   if(!isEditMode||editor.classList.contains("hidden")){
     toolbar.classList.add("hidden");
@@ -976,7 +927,6 @@ function updateToolbarPosition(){
   if(!palette.classList.contains("hidden"))palette.style.bottom=(bottom+55)+"px";
 }
 
-/* AUTO-SCROLL FIX */
 let typingScrollFrame=0,typingScrollFrame2=0;
 let pasteScrollPending=false,pasteScrollToken=0;
 
@@ -1004,36 +954,6 @@ function getTypingCaretRect(){
   if(!range.collapsed||!noteBody.contains(range.startContainer))return null;
   const caretRect=range.getBoundingClientRect();
   if(caretRect.height>0)return caretRect;
-  const node=range.startContainer;
-  if(node.nodeType===Node.TEXT_NODE&&node.textContent.length){
-    const length=node.textContent.length;
-    const offset=Math.max(0,Math.min(range.startOffset,length-1));
-    const probe=document.createRange();
-    probe.setStart(node,offset);
-    probe.setEnd(node,Math.min(offset+1,length));
-    const rects=probe.getClientRects();
-    if(rects.length){
-      const r=rects[rects.length-1];
-      return{top:r.top,bottom:r.bottom,height:r.height,left:r.left,right:r.right,width:r.width};
-    }
-  }
-  if(node.nodeType===Node.ELEMENT_NODE&&range.startOffset>0){
-    const previous=node.childNodes[range.startOffset-1];
-    if(previous){
-      const probe=document.createRange();
-      try{
-        if(previous.nodeType===Node.TEXT_NODE&&previous.length){
-          probe.setStart(previous,previous.length-1);
-          probe.setEnd(previous,previous.length);
-        }else{
-          probe.selectNodeContents(previous);
-          probe.collapse(false);
-        }
-        const r=probe.getBoundingClientRect();
-        if(r.height>0)return r;
-      }catch(e){}
-    }
-  }
   return null;
 }
 function keepTypingLineVisible(){
@@ -1058,38 +978,6 @@ function scheduleTypingScroll(){
     });
   });
 }
-function keepPastedTailAtTarget(){
-  if(!isEditMode||editor.classList.contains("hidden")||document.activeElement!==noteBody)return false;
-  const caret=getTypingCaretRect(),area=getVisibleTypingArea();
-  if(!caret||!area)return false;
-  const difference=caret.bottom-area.targetY;
-  if(Math.abs(difference)>1)noteBody.scrollTop+=difference;
-  return true;
-}
-function schedulePasteTailScroll(){
-  pasteScrollPending=true;
-  const token=++pasteScrollToken;
-  setTimeout(()=>{
-    if(token!==pasteScrollToken)return;
-    updateToolbarPosition();
-    updateNoteBottomSpace();
-    let attempts=0;
-    function positionPastedTail(){
-      if(token!==pasteScrollToken)return;
-      updateToolbarPosition();
-      updateNoteBottomSpace();
-      const positioned=keepPastedTailAtTarget();
-      if(positioned||attempts>=8){
-        pasteScrollPending=false;
-        scheduleTypingScroll();
-        return;
-      }
-      attempts++;
-      requestAnimationFrame(positionPastedTail);
-    }
-    requestAnimationFrame(()=>requestAnimationFrame(positionPastedTail));
-  },0);
-}
 
 /* PASTE SANITIZER */
 noteBody.addEventListener("paste", (e) => {
@@ -1103,7 +991,7 @@ noteBody.addEventListener("paste", (e) => {
     selection.deleteFromDocument();
     selection.getRangeAt(0).insertNode(document.createTextNode(plainText));
   }
-  schedulePasteTailScroll();
+  scheduleTypingScroll();
 });
 
 noteBody.addEventListener("input",scheduleTypingScroll);
@@ -1124,7 +1012,7 @@ if(vv){
 }
 
 ["btnBold","btnItalic","btnUnderline","btnHighlight","btnTextColor"].forEach(id=>{
-  $(id).addEventListener("mousedown",e=>e.preventDefault());
+  $(id)?.addEventListener("mousedown",e=>e.preventDefault());
 });
 toolbar.querySelectorAll("button").forEach(b=>{
   b.addEventListener("mousedown",e=>{e.preventDefault();saveSelection()});
@@ -1140,12 +1028,13 @@ $("btnTextColor").addEventListener("click",()=>openPalette("font"));
 $("btnFontMinus").addEventListener("click",()=>changeFontSize(-1));
 $("btnFontPlus").addEventListener("click",()=>changeFontSize(1));
 $("paletteClose").addEventListener("click",closePalette);
+
 noteBody.addEventListener("keyup",saveSelection);
 noteBody.addEventListener("mouseup",saveSelection);
 noteBody.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 noteTitle.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 
-/* MAIN BUTTONS AND MENUS (NO MORE AUTO FILE DOWNLOAD) */
+/* MAIN BUTTONS AND MENUS */
 $("btnSaveFile")?.addEventListener("click", () => {
   saveCurrentNote();
   showToast("✓ Saved locally");
@@ -1334,7 +1223,6 @@ window.addEventListener("beforeunload",()=>{
 /* STARTUP WITH INDEXEDDB RECOVERY */
 async function startApp(){
   requestPersistentStorage();
-
   const backup=await readDurableBackup();
 
   if(!notesWereStored&&backup&&Array.isArray(backup.notes)){
@@ -1399,101 +1287,47 @@ if("serviceWorker" in navigator){
 /* CLOUD SYNC BRIDGE */
 window.PreachMateApp = {
   isReady: false,
-
   getCloudData() {
     return {
       notes: JSON.parse(JSON.stringify(notes)),
       categories: JSON.parse(JSON.stringify(categories))
     };
   },
-
   applyCloudData(data) {
-    if (
-      !data ||
-      !Array.isArray(data.notes) ||
-      !Array.isArray(data.categories)
-    ) {
+    if (!data || !Array.isArray(data.notes) || !Array.isArray(data.categories)) {
       throw new Error("Invalid cloud backup.");
     }
-
     const previousNotes = notes;
     const previousCategories = categories;
 
     try {
       notes = data.notes;
       categories = data.categories;
-
       localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
       localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-
       applyPermanentLogo();
       renderCategories();
       renderNotes();
       flushDurableBackup();
-
       return true;
     } catch (error) {
       notes = previousNotes;
       categories = previousCategories;
-      throw new Error(
-        "Could not restore cloud data locally: " +
-        (error?.message || "Unknown error")
-      );
+      throw new Error("Could not restore cloud data locally: " + (error?.message || "Unknown error"));
     }
   }
 };
 
-/* SIGNAL CLOUD SYNC AFTER APP STARTUP */
 appStartupPromise
   .then(() => {
     window.PreachMateApp.isReady = true;
-
-    window.dispatchEvent(
-      new Event("preachmate:app-ready")
-    );
-
+    window.dispatchEvent(new Event("preachmate:app-ready"));
     console.log("Preach Mate: app ready for cloud sync.");
   })
   .catch(error => {
     window.PreachMateApp.isReady = false;
     console.error("Preach Mate initialization failed:", error);
   });
-
-/* EMERGENCY PURGE BUTTON FOR CORRUPTED NOTES */
-window.purgeCorruptedNote = async function() {
-  const user = window.PreachMateFirebase?.getCurrentUser();
-  const db = window.PreachMateFirebase?.getFirestore();
-
-  let localNotes = JSON.parse(localStorage.getItem("notepal_notes_v2") || "[]");
-  
-  const corruptNotes = localNotes.filter(n => 
-    n.content.includes("read-word-marker") || 
-    n.content.includes("class=") || 
-    n.title === "" || 
-    n.title === "Untitled note"
-  );
-  
-  if (corruptNotes.length === 0) {
-    alert("No corrupted notes found!");
-    return;
-  }
-
-    if (user && db) {
-    for (const note of corruptNotes) {
-      try {
-        await db.collection("users").doc(user.uid).collection("notes").doc(note.id).delete();
-      } catch (e) {
-        console.error("Cloud deletion failed:", e);
-      }
-    }
-  }
-
-  const cleanNotes = localNotes.filter(n => !corruptNotes.some(cn => cn.id === n.id));
-  localStorage.setItem("notepal_notes_v2", JSON.stringify(cleanNotes));
-
-  alert(`Successfully purged ${corruptNotes.length} corrupted note(s)! Reloading...`);
-  location.reload();
-};
 
 })();
 
@@ -1568,64 +1402,72 @@ function showMessengerInstallGuide() {
     modal.style.display = "flex";
   }
 }
+
 /* ==========================================
-   PREACH MATE — SMART OUTLINE FORMATTER
+   PREACH MATE — SMART OUTLINE FORMATTER (FOR CONTENTEDITABLE)
    ========================================== */
 
 function insertSmartOutline(type) {
-  const textarea = document.getElementById("note-editor");
-  if (!textarea) return;
+  const editor = document.getElementById("noteBody");
+  if (!editor) return;
 
-  const start = textarea.selectionStart;
-  const text = textarea.value;
+  editor.focus();
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
 
-  // 1. Hanapin ang simula ng kasalukuyang linya
-  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-  const currentLine = text.substring(lineStart, start);
-
-  // 2. Kunin din ang buong nakaraang text para sa context ng sequence
-  const textBeforeCursor = text.substring(0, start);
-  const lines = textBeforeCursor.split('\n');
+  const range = selection.getRangeAt(0);
+  
+  // 1. Kunin ang kasalukuyang text sa editor para sa sequence calculation
+  const fullText = editor.innerText || "";
+  const lines = fullText.split('\n');
 
   let formattedPrefix = "";
 
   switch (type) {
     case 'topic':
-      // Level 1: Topic (♦️) — Walang indent
-      formattedPrefix = "**♦️ ";
+      formattedPrefix = "♦️ ";
       break;
 
     case 'roman':
-      // Level 2: Roman Numerals (I. -> II. -> III. -> IV. -> V.)
-      formattedPrefix = "     **" + getNextRomanNumeral(lines) + ".** ";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextRomanNumeral(lines) + ".</b>&nbsp;";
       break;
 
     case 'number':
-      // Level 3: Numbers (1. -> 2. -> 3. -> 4.)
-      formattedPrefix = "       **" + getNextNumberSequence(lines) + ".** ";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextNumberSequence(lines) + ".</b>&nbsp;";
       break;
 
     case 'letter':
-      // Level 4: Letters (a. -> b. -> c. -> d.)
-      formattedPrefix = "         **" + getNextLetterSequence(lines) + ".** ";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(lines) + ".</b>&nbsp;";
       break;
   }
 
-  // 3. I-insert ang prefix sa kasalukuyang linya
-  const updatedText = text.substring(0, lineStart) + formattedPrefix + text.substring(start);
-  textarea.value = updatedText;
+  if (type === 'topic') {
+    formattedPrefix = "<b>♦️ </b>";
+  }
 
-  // 4. Ilagay ang cursor pagkatapos ng bagong in-insert na prefix
-  const newCursorPos = lineStart + formattedPrefix.length;
-  textarea.selectionStart = textarea.selectionEnd = newCursorPos;
-  textarea.focus();
+  // 2. I-insert bilang HTML sa eksaktong posisyon ng cursor
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = formattedPrefix;
+  const frag = document.createDocumentFragment();
+  let node;
+  while ((node = tempDiv.firstChild)) {
+    frag.appendChild(node);
+  }
+  
+  range.deleteContents();
+  range.insertNode(frag);
+  
+  // 3. Igalaw ang cursor sa dulo ng in-insert na prefix
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 // Helper: Alamin ang kasunod na Letter (a -> b -> c -> d)
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/\*\*([a-z])\.\*\*/i);
+    const match = lines[i].match(/([a-z])\./i);
     if (match) {
       const lastChar = match[1].toLowerCase();
       const nextIndex = alphabet.indexOf(lastChar) + 1;
@@ -1634,25 +1476,25 @@ function getNextLetterSequence(lines) {
       }
     }
   }
-  return "a"; // Default kung wala pang nakaraang 'a.'
+  return "a";
 }
 
 // Helper: Alamin ang kasunod na Number (1 -> 2 -> 3)
 function getNextNumberSequence(lines) {
   for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/\*\*(\d+)\.\*\*/);
+    const match = lines[i].match(/(\d+)\./);
     if (match) {
       return parseInt(match[1], 10) + 1;
     }
   }
-  return 1; // Default kung wala pang nakaraang number
+  return 1;
 }
 
 // Helper: Alamin ang kasunod na Roman Numeral (I -> II -> III -> IV)
 function getNextRomanNumeral(lines) {
   const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
   for (let i = lines.length - 1; i >= 0; i--) {
-    const match = lines[i].match(/\*\*([IVX]+)\.\*\*/i);
+    const match = lines[i].match(/([IVX]+)\./i);
     if (match) {
       const lastRoman = match[1].toUpperCase();
       const nextIndex = romans.indexOf(lastRoman) + 1;
@@ -1661,5 +1503,5 @@ function getNextRomanNumeral(lines) {
       }
     }
   }
-  return "I"; // Default kung wala pang nakaraang Roman numeral
+  return "I";
 }
