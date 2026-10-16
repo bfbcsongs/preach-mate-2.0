@@ -1332,7 +1332,7 @@ appStartupPromise
 })();
 
 /* ==========================================
-   PREACH MATE — CURSOR-AWARE SMART OUTLINE FORMATTER
+   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER
    ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
@@ -1344,13 +1344,8 @@ window.insertSmartOutline = function(type) {
 
   const range = selection.getRangeAt(0);
 
-  // KUNIN LAMANG ANG TEXT MULA SA SIMULA HANGGANG SA KASALUKUYANG CURSOR
-  const preCaretRange = range.cloneRange();
-  preCaretRange.selectNodeContents(editor);
-  preCaretRange.setEnd(range.startContainer, range.startOffset);
-  
-  const textBeforeCursor = preCaretRange.toString();
-  const linesBeforeCursor = textBeforeCursor.split('\n');
+  // Kunin ang lahat ng text lines BAGO ang cursor position gamit ang DOM Node Traversal
+  const linesBeforeCursor = getLinesBeforeSelection(editor, range);
 
   let formattedPrefix = "";
 
@@ -1392,15 +1387,37 @@ window.insertSmartOutline = function(type) {
   }
 };
 
+// Kunin ang malinis na mga linya bago ang cursor position
+function getLinesBeforeSelection(editor, range) {
+  const clone = range.cloneRange();
+  clone.selectNodeContents(editor);
+  clone.setEnd(range.startContainer, range.startOffset);
+
+  const container = document.createElement("div");
+  container.appendChild(clone.cloneContents());
+
+  // Palitan ang mga line break HTML elements ng tunay na newline '\n'
+  const html = container.innerHTML
+    .replace(/<br\s*[\/]?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/div>/gi, "\n");
+
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+  
+  const cleanText = temp.textContent || temp.innerText || "";
+  return cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+}
+
 // 1. Roman Numeral sequence (mother: ♦️)
 function getNextRomanNumeral(lines) {
   const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
   let lastRoman = null;
 
   for (let i = lines.length - 1; i >= 0; i--) {
-    const trimmed = lines[i].trim();
+    const trimmed = lines[i];
     if (trimmed.includes("♦️")) {
-      break; // Huminto at mag-reset kung may makitang Topic sa itaas
+      break; // Reset sa "I." kapag may nakitang Topic (♦️) sa itaas
     }
     const match = trimmed.match(/^([IVX]+)\./i);
     if (match) {
@@ -1423,9 +1440,9 @@ function getNextNumberSequence(lines) {
   let lastNumber = null;
 
   for (let i = lines.length - 1; i >= 0; i--) {
-    const trimmed = lines[i].trim();
+    const trimmed = lines[i];
     if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
-      break; // Huminto at mag-reset kung makakita ng Roman numeral o Topic sa itaas
+      break; // Reset sa "1." kapag may Roman Numeral o Topic sa itaas
     }
     const match = trimmed.match(/^(\d+)\./);
     if (match) {
@@ -1446,9 +1463,9 @@ function getNextLetterSequence(lines) {
   let lastLetter = null;
 
   for (let i = lines.length - 1; i >= 0; i--) {
-    const trimmed = lines[i].trim();
+    const trimmed = lines[i];
     if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed) || /^(\d+)\./.test(trimmed)) {
-      break; // Huminto at mag-reset sa 'a' kung makakita ng Number, Roman, o Topic sa itaas
+      break; // Reset sa "a." kapag may Number, Roman, o Topic sa itaas
     }
     const match = trimmed.match(/^([a-z])\./i);
     if (match) {
