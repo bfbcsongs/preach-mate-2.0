@@ -1586,3 +1586,23 @@ function getNextLetterSequence(lines) {
     setInterval(checkForUpdates, CHECK_INTERVAL);
   });
 })();
+/* TOOLBAR SLIDER / TOGGLE SWITCH */
+$("btnToggleToolbar")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  const textGroup = $("toolbarGroupText");
+  const outlineGroup = $("toolbarGroupOutline");
+  const toggleBtn = $("btnToggleToolbar");
+
+  if (outlineGroup.classList.contains("hidden")) {
+    // Lumipat sa Outline Mode
+    textGroup.classList.add("hidden");
+    outlineGroup.classList.remove("hidden");
+    toggleBtn.textContent = "✏️"; // Pindutin ulit para bumalik sa Text tools
+    showToast("Smart Outline tools");
+  } else {
+    // Bumalik sa Normal Text Formatting Mode
+    outlineGroup.classList.add("hidden");
+    textGroup.classList.remove("hidden");
+    toggleBtn.textContent = "📐"; // Pindutin para pumunta sa Outline tools
+  }
+});
