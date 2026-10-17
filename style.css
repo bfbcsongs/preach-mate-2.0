@@ -1034,3 +1034,40 @@ textarea {
     padding-right: 22px;
   }
 }
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  height: 48px; /* Manipis lang, hindi kakain ng screen space */
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow-x: auto; /* Pwede rin i-swipe nang pahalang */
+  scrollbar-width: none;
+}
+.toolbar-group::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-toggle-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 16px;
+  margin-left: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
