@@ -169,34 +169,17 @@
 
 </section>
 
-<div id="editorToolbar" class="editor-toolbar hidden">
-  <!-- Group 1: Text Formatting Tools -->
-  <div id="toolbarGroupText" class="toolbar-group">
-    <button id="btnUndo" title="Undo">↩</button>
-    <button id="btnRedo" title="Redo">↪</button>
-    <button id="btnBold" title="Bold"><b>B</b></button>
-    <button id="btnItalic" title="Italic"><i>I</i></button>
-    <button id="btnUnderline" title="Underline"><u>U</u></button>
-    <button id="btnHighlight" title="Highlight">🖍️</button>
-    <button id="btnTextColor" title="Text Color">A</button>
-    <button id="btnFontMinus" title="Decrease Font">A-</button>
-    <button id="btnFontPlus" title="Increase Font">A+</button>
-  </div>
-
-  <!-- Group 2: Smart Outline Tools (Naka-hide muna) -->
-  <div id="toolbarGroupOutline" class="toolbar-group hidden">
-    <button onclick="insertSmartOutline('topic')" title="Topic Header">♦️</button>
-    <button onclick="insertSmartOutline('roman')" title="Roman Numeral">I.</button>
-    <button onclick="insertSmartOutline('number')" title="Number">1.</button>
-    <button onclick="insertSmartOutline('letter')" title="Letter">a.</button>
-  </div>
-
-  <!-- Toggle Switch Button sa Kanang Dulo -->
-  <button id="btnToggleToolbar" type="button" class="toolbar-toggle-btn" title="Switch Tools">
-    📐
-  </button>
-</div>
-
+<div class="editor-toolbar hidden" id="editorToolbar">
+  <!-- Existing Formatting Buttons -->
+  <button class="fmt-btn" id="btnUndo" title="Undo" aria-label="Undo">↶</button>
+  <button class="fmt-btn" id="btnRedo" title="Redo" aria-label="Redo">↷</button>
+  <button class="fmt-btn" id="btnBold" title="Bold"><b>B</b></button>
+  <button class="fmt-btn" id="btnItalic" title="Italic"><i>I</i></button>
+  <button class="fmt-btn" id="btnUnderline" title="Underline"><u>U</u></button>
+  <button class="fmt-btn" id="btnHighlight" title="Choose highlight color">A</button>
+  <button class="fmt-btn" id="btnTextColor" title="Choose font color">◉</button>
+  <button class="fmt-btn" id="btnFontMinus" title="Decrease size">−</button>
+  <button class="fmt-btn" id="btnFontPlus" title="Increase size">+</button>
 
   <!-- 👇 BAGONG IDINAGDAG NA SMART OUTLINE BUTTONS -->
   <span style="width: 1px; background: #3f3f46; margin: 0 4px;"></span> <!-- Divider line -->
