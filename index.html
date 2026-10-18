@@ -17,27 +17,24 @@
 
 <!-- ==========================================
      ⚙️ 7-PART CENTRALIZED CONFIGURATION
-     Dito mo na babaguhin ang lahat sa hinaharap!
      ========================================== -->
 <script>
   window.APP_CONFIG = {
-    mainTitle: "Preach Mate",      // 1. Potter's House main menu
-    mainSubtitle: "bypaulm",           // 2. Ilagan underneath (main menu)
-    drawerTitle: "Preach Mate",    // 3. Potter's House drawer
-    drawerSubtitle: "Ministry.",        // 4. Ilagan underneath (drawer)
-    topbarBgColor: "#f0f7ff",         // 5. Top bar background theme color
-    accentColor: "#2563eb",           // 6. Accent color (active buttons/FAB)
-    logoUrl: "./logo.png"             // 7. Logo (mababago sa upload/file)
+    mainTitle: "Preach Mate",      
+    mainSubtitle: "bypaulm",           
+    drawerTitle: "Preach Mate",    
+    drawerSubtitle: "Ministry.",        
+    topbarBgColor: "#f0f7ff",         
+    accentColor: "#2563eb",           
+    logoUrl: "./logo.png"             
   };
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Apply Main Menu Titles
     const mainTitleEl = document.querySelector(".topbar .brand");
     const mainSubEl = document.querySelector(".topbar .brand-wrap small");
     if (mainTitleEl) mainTitleEl.textContent = window.APP_CONFIG.mainTitle;
     if (mainSubEl) mainSubEl.textContent = window.APP_CONFIG.mainSubtitle;
 
-    // Apply Drawer Titles
     const drawerTitleEl = document.querySelector(".drawer-title");
     if (drawerTitleEl) {
       drawerTitleEl.innerHTML = `
@@ -46,13 +43,11 @@
       `;
     }
 
-    // Apply Logos (Main & Drawer)
     const logoElements = document.querySelectorAll("#topbarLogo, #drawerLogo");
     logoElements.forEach(img => {
       if (img && window.APP_CONFIG.logoUrl) img.src = window.APP_CONFIG.logoUrl;
     });
 
-    // Apply Colors
     const root = document.documentElement;
     if (window.APP_CONFIG.topbarBgColor) {
       root.style.setProperty('--topbar-bg', window.APP_CONFIG.topbarBgColor);
@@ -75,9 +70,9 @@
       <div>
         <div class="brand">POTTER'S HOUSE</div>
         <small style="display:block;font-size:11px;font-weight:500;color:#16a34a;margin-top:4px;line-height:1.1">ILAGAN</small>
-     <button id="topbarInstallBtn" style="display: inline-flex; align-items: center; gap: 4px; background: #2563eb; color: #fff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; margin-top: 4px;">
-  <span>⬇ Install App</span>
-     </button>
+        <button id="topbarInstallBtn" style="display: inline-flex; align-items: center; gap: 4px; background: #2563eb; color: #fff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; margin-top: 4px;">
+          <span>⬇ Install App</span>
+        </button>
       </div>
       <img id="topbarLogo" class="brand-logo" src="./logo.png" alt="Church logo">
     </div>
@@ -130,7 +125,6 @@
     
     <div class="drawer-footer">Notes are saved on this device and synced to your account when cloud sync is available.</div>
 
-    <!-- INTEGRATED DRAWER UPDATE CONTAINER -->
     <div id="drawer-update-area" style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px;">
       <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
         <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
@@ -142,7 +136,7 @@
   </aside>
 </div>
 
-
+<!-- EDITOR SCREEN -->
 <section class="editor-screen hidden" id="editorScreen">
 
   <header class="editor-header">
@@ -157,6 +151,30 @@
     <button class="icon-btn" id="btnMenu" title="More options" aria-label="More options">⋮</button>
   </header>
 
+  <!-- ⏱️ LIVE TIME BAR (Awtomatikong lalabas tuwing READ MODE) -->
+  <div class="time-bar hidden" id="timeBar">
+    <div class="time-item">
+      <span id="startTime">--:--</span>
+      <span class="time-label">START</span>
+    </div>
+    <div class="time-item">
+      <span id="currentTime">--:--</span>
+      <span class="time-label">CURRENT</span>
+    </div>
+    <div class="time-item">
+      <span id="elapsedTime" class="elapsed-highlight">00:00</span>
+      <span class="time-label">ELAPSED</span>
+    </div>
+
+    <div class="time-divider"></div>
+
+    <div class="time-controls">
+      <button class="time-btn" id="btnPlayPause" title="Play/Pause">▶</button>
+      <button class="time-btn" id="btnStop" title="Stop">⏹</button>
+      <button class="time-btn" id="btnReset" title="Reset">🔄</button>
+    </div>
+  </div>
+
   <div class="note-body" id="noteBody" contenteditable="false" spellcheck="true"></div>
 
   <div class="editor-menu hidden" id="editorMenu">
@@ -170,7 +188,6 @@
 </section>
 
 <div class="editor-toolbar hidden" id="editorToolbar">
-  <!-- Existing Formatting Buttons -->
   <button class="fmt-btn" id="btnUndo" title="Undo" aria-label="Undo">↶</button>
   <button class="fmt-btn" id="btnRedo" title="Redo" aria-label="Redo">↷</button>
   <button class="fmt-btn" id="btnBold" title="Bold"><b>B</b></button>
@@ -181,8 +198,7 @@
   <button class="fmt-btn" id="btnFontMinus" title="Decrease size">−</button>
   <button class="fmt-btn" id="btnFontPlus" title="Increase size">+</button>
 
-  <!-- 👇 BAGONG IDINAGDAG NA SMART OUTLINE BUTTONS -->
-  <span style="width: 1px; background: #3f3f46; margin: 0 4px;"></span> <!-- Divider line -->
+  <span style="width: 1px; background: #3f3f46; margin: 0 4px;"></span>
   <button class="fmt-btn" type="button" onclick="insertSmartOutline('topic')" title="Topic">♦️</button>
   <button class="fmt-btn" type="button" onclick="insertSmartOutline('roman')" title="Main Point (I.)">I.</button>
   <button class="fmt-btn" type="button" onclick="insertSmartOutline('number')" title="Sub-point (1.)">1.</button>
@@ -200,9 +216,7 @@
 <div class="dialog-backdrop hidden" id="dialogBackdrop">
   <div class="dialog" role="dialog" aria-modal="true">
     <h3 id="dialogTitle">Add Category</h3>
-
     <div id="dialogContent"></div>
-
     <div class="dialog-actions">
       <button class="btn" id="dialogCancel">Cancel</button>
       <button class="btn primary" id="dialogConfirm">Save</button>
@@ -220,16 +234,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 
-<!-- Firebase Authentication -->
 <script src="./firebase-auth.js" defer></script>
-
-<!-- Firebase Cloud Sync: must load before app.js -->
 <script src="./cloud-sync.js" defer></script>
-
-<!-- Main Preach Mate application -->
 <script src="./app.js" defer></script>
 
-<!-- INTEGRATED DRAWER UPDATE ENGINE -->
+<!-- AUTO UPDATE CHECKER SCRIPT -->
 <script>
   (function () {
     const CHECK_INTERVAL = 60 * 1000;
@@ -267,7 +276,6 @@
       if (hasUpdate) {
         const verStr = (serverData && serverData.version) ? ` (${serverData.version})` : "";
         
-        // Ipasok ang magandang update card UI SA LOOB NG DRAWER!
         updateArea.innerHTML = `
           <div style="background: #18181b; color: #f9fafb; padding: 12px 14px; border-radius: 12px; border: 1px solid #3f3f46; display: flex; align-items: center; gap: 10px; font-size: 12px;">
             <div style="flex: 1;">
@@ -280,25 +288,20 @@
           </div>
         `;
 
-                document.getElementById("pm-drawer-do-update").onclick = async () => {
+        document.getElementById("pm-drawer-do-update").onclick = async () => {
           const btn = document.getElementById("pm-drawer-do-update");
           btn.textContent = "Updating...";
           btn.style.pointerEvents = "none";
           btn.style.opacity = "0.8";
 
           try {
-            // Updated key para sa atin bagong checker engine:
             if (serverData) {
               localStorage.setItem("pm_app_version", JSON.stringify(serverData));
             }
-
-            // Burahin ang lumang Cache Storage
             if ('caches' in window) {
               const keys = await caches.keys();
               await Promise.all(keys.map(key => caches.delete(key)));
             }
-
-            // Unregister para sa malinis na panibagong Service Worker fetch
             if ('serviceWorker' in navigator) {
               const registrations = await navigator.serviceWorker.getRegistrations();
               for (let registration of registrations) {
@@ -309,11 +312,9 @@
             console.log("Update execution error:", e);
           }
 
-          // Safe reload sequence na may timestamp parameter
           window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
         };
       } else {
-        // Balik sa VERSION: Latest status
         updateArea.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
             <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
@@ -344,7 +345,6 @@
     const installBtn = document.getElementById("topbarInstallBtn");
     if (!installBtn) return;
 
-    // Itago kung PWA standalone mode na
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
       installBtn.style.display = 'none';
       return;
@@ -359,7 +359,6 @@
         }
         deferredPrompt = null;
       } else {
-        // Fallback Alert para sa mga lumang phone/browser na walang auto prompt
         alert("Para ma-install ang Preach Mate sa phone mo:\n\n1. I-tap ang Menu icon (tatlong tuldok ⋮ sa kanang taas ng browser).\n2. Piliin ang 'Add to Home Screen' o 'Install App'.");
       }
     };
