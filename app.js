@@ -140,7 +140,6 @@ function flushDurableBackup(){
   return backupWriteQueue;
 }
 
-/* REQUEST PERSISTENT STORAGE WHEN SUPPORTED */
 async function requestPersistentStorage(){
   try{
     if(navigator.storage&&navigator.storage.persist){
@@ -152,7 +151,6 @@ async function requestPersistentStorage(){
   return false;
 }
 
-/* INSTALL BUTTON */
 let deferredInstallPrompt=null;
 let installCompleted=false;
 
@@ -178,7 +176,6 @@ window.addEventListener("appinstalled",()=>{
   showToast("Preach Mate is installed!");
 });
 
-/* STARTUP DATA */
 const DEFAULT_CATEGORIES=["All Notes","Personal","Study","Work","Ideas"];
 const initialCategoriesRaw=safeStorageGet(CATEGORIES_KEY);
 const initialNotesRaw=safeStorageGet(STORAGE_KEY);
@@ -279,7 +276,6 @@ function showToast(msg){
   toastTimer=setTimeout(()=>$("toast").classList.add("hidden"),2400);
 }
 
-/* PERMANENT LOGO APPLICATION */
 function applyPermanentLogo(){
   ["topbarLogo","drawerLogo"].forEach(id=>{
     const img=$(id);
@@ -392,7 +388,6 @@ function renderDrawerCategories(){
   });
 }
 
-/* CATEGORY DRAGGING ENGINE */
 function attachCategoryDrag(button, surface) {
   const isTabs = surface === "tabs";
   const container = isTabs ? $("categoryTabs") : $("drawerCategories");
@@ -477,7 +472,6 @@ function attachCategoryDrag(button, surface) {
   button.addEventListener("pointercancel", finishDrag);
 }
 
-/* NOTES LIST */
 function renderNotes(){
   const grid=$("notesGrid");
   grid.innerHTML="";
@@ -562,6 +556,7 @@ function openNote(id){
   clearTimeout(saveStatusTimer);
   setSaveStatus("saved");
 }
+
 function newNote(){
   const cat=activeCategory!=="All Notes"&&categories.includes(activeCategory)
     ?activeCategory:(categories.find(c=>c!=="All Notes")||"Personal");
@@ -593,6 +588,10 @@ function closeEditor(){
 function setMode(edit){
   clearReadMarker();
   isEditMode=!!edit;
+  
+  // 👉 CALL TIME BAR TOGGLE (Awtomatikong itatago sa Edit, ipapakita sa Read)
+  toggleTimeBarForMode(isEditMode);
+
   if(!isEditMode){
     saveCurrentNote();
     closePalette();
@@ -614,6 +613,93 @@ function setMode(edit){
     noteBody.style.paddingBottom="120px";
   }
 }
+
+/* ==========================================
+   ⏱️ LIVE PREACHING TIME BAR ENGINE
+   ========================================== */
+let timerInterval = null;
+let secondsElapsed = 0;
+let isTimerRunning = false;
+
+function formatTime(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function updateCurrentClock() {
+  const currentTimeEl = $("currentTime");
+  if (!currentTimeEl) return;
+  const now = new Date();
+  currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateCurrentClock, 1000);
+
+function toggleTimeBarForMode(editMode) {
+  const timeBar = $("timeBar");
+  if (!timeBar) return;
+
+  if (!editMode) {
+    // READ MODE: Ipakita ang time bar at i-update ang live clock
+    timeBar.classList.remove("hidden");
+    updateCurrentClock();
+  } else {
+    // EDIT MODE: Itago ang time bar para malinis ang editing space
+    timeBar.classList.add("hidden");
+  }
+}
+
+// Time Bar Control Button Event Handlers
+document.addEventListener("DOMContentLoaded", () => {
+  const btnPlayPause = $("btnPlayPause");
+  const btnStop = $("btnStop");
+  const btnReset = $("btnReset");
+
+  if (btnPlayPause) {
+    btnPlayPause.addEventListener("click", () => {
+      const startTimeEl = $("startTime");
+      const elapsedTimeEl = $("elapsedTime");
+
+      if (!isTimerRunning) {
+        if (secondsElapsed === 0 && startTimeEl) {
+          const now = new Date();
+          startTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        isTimerRunning = true;
+        btnPlayPause.textContent = "⏸";
+        timerInterval = setInterval(() => {
+          secondsElapsed++;
+          if (elapsedTimeEl) elapsedTimeEl.textContent = formatTime(secondsElapsed);
+        }, 1000);
+      } else {
+        isTimerRunning = false;
+        btnPlayPause.textContent = "▶";
+        clearInterval(timerInterval);
+      }
+    });
+  }
+
+  if (btnStop) {
+    btnStop.addEventListener("click", () => {
+      isTimerRunning = false;
+      clearInterval(timerInterval);
+      if (btnPlayPause) btnPlayPause.textContent = "▶";
+    });
+  }
+
+  if (btnReset) {
+    btnReset.addEventListener("click", () => {
+      isTimerRunning = false;
+      clearInterval(timerInterval);
+      secondsElapsed = 0;
+      const elapsedTimeEl = $("elapsedTime");
+      const startTimeEl = $("startTime");
+      if (elapsedTimeEl) elapsedTimeEl.textContent = "00:00";
+      if (startTimeEl) startTimeEl.textContent = "--:--";
+      if (btnPlayPause) btnPlayPause.textContent = "▶";
+    });
+  }
+});
 
 /* READ MODE WORD MARKER */
 function clearReadMarker(){
@@ -659,7 +745,6 @@ function markWordAtPoint(e){
 }
 noteBody.addEventListener("click",markWordAtPoint);
 
-/* TEXT SELECTION AND EDITING */
 function saveSelection(){
   const s=window.getSelection();
   if(!s||!s.rangeCount)return;
@@ -763,7 +848,6 @@ function fallbackCopy(text){
   area.remove();
 }
 
-/* DIALOGS AND CATEGORY MANAGEMENT */
 function openDialog(title,content,action,label="Save",danger=false){
   $("dialogTitle").textContent=title;
   $("dialogContent").innerHTML=content;
@@ -911,7 +995,6 @@ function restoreNotesFromFile(file){
   reader.readAsText(file);
 }
 
-/* TOOLBAR POSITION & SCROLLING */
 function updateToolbarPosition(){
   if(!isEditMode||editor.classList.contains("hidden")){
     toolbar.classList.add("hidden");
@@ -928,7 +1011,7 @@ function updateToolbarPosition(){
 }
 
 let typingScrollFrame=0,typingScrollFrame2=0;
-let pasteScrollPending=false,pasteScrollToken=0;
+let pasteScrollPending=false;
 
 function updateNoteBottomSpace(){
   if(!noteBody||!toolbar)return;
@@ -979,7 +1062,6 @@ function scheduleTypingScroll(){
   });
 }
 
-/* PASTE SANITIZER */
 noteBody.addEventListener("paste", (e) => {
   e.preventDefault();
   const plainText = (e.clipboardData || window.clipboardData).getData("text/plain");
@@ -1033,12 +1115,6 @@ noteBody.addEventListener("keyup",saveSelection);
 noteBody.addEventListener("mouseup",saveSelection);
 noteBody.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
 noteTitle.addEventListener("input",()=>{if(isEditMode)saveCurrentNote()});
-
-/* MAIN BUTTONS AND MENUS */
-$("btnSaveFile")?.addEventListener("click", () => {
-  saveCurrentNote();
-  showToast("✓ Saved locally");
-});
 
 $("btnNewNote").addEventListener("click",newNote);
 $("btnBack").addEventListener("click",closeEditor);
@@ -1116,7 +1192,6 @@ $("dialogConfirm").addEventListener("click",()=>{
   }
 });
 
-/* INSTALL BUTTON */
 $("drawerInstall").addEventListener("click",async()=>{
   if(isInstalledApp()){
     updateInstallButton();
@@ -1156,7 +1231,6 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-/* ANDROID BACK BUTTON */
 let lastHomeBackTime=0,backExitTimer=null;
 let allowNativeBack=false,backActionInProgress=false;
 
@@ -1205,7 +1279,6 @@ window.addEventListener("resize",()=>{
   scheduleTypingScroll();
 });
 
-/* SAVE BEFORE THE PAGE IS HIDDEN OR CLOSED */
 window.addEventListener("pagehide",()=>{
   if(currentNoteId)saveCurrentNote();
   flushDurableBackup();
@@ -1220,7 +1293,6 @@ window.addEventListener("beforeunload",()=>{
   if(currentNoteId)saveCurrentNote();
 });
 
-/* STARTUP WITH INDEXEDDB RECOVERY */
 async function startApp(){
   requestPersistentStorage();
   const backup=await readDurableBackup();
@@ -1271,7 +1343,6 @@ const appStartupPromise = startApp().catch(error => {
   throw error;
 });
 
-/* SERVICE WORKER REGISTRATION */
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>{
     navigator.serviceWorker.register("./sw.js",{scope:"./"})
@@ -1284,7 +1355,6 @@ if("serviceWorker" in navigator){
   });
 }
 
-/* CLOUD SYNC BRIDGE */
 window.PreachMateApp = {
   isReady: false,
   getCloudData() {
@@ -1331,9 +1401,7 @@ appStartupPromise
 
 })();
 
-/* ==========================================
-   PREACH MATE — DOM-BASED SMART OUTLINE FORMATTER (GUARANTEED UNBOLD CURSOR)
-   ========================================== */
+/* SMART OUTLINE FORMATTER */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
   if (!editor) return;
@@ -1343,30 +1411,20 @@ window.insertSmartOutline = function(type) {
   if (!selection.rangeCount) return;
 
   const range = selection.getRangeAt(0);
-
-  // Kunin ang lahat ng text lines BAGO ang cursor position
   const linesBeforeCursor = getLinesBeforeSelection(editor, range);
-
   let formattedPrefix = "";
 
   switch (type) {
     case 'topic':
-      // Topic Header (No indentation)
       formattedPrefix = "<b>♦️ </b><span style='font-weight:normal;'>&#8203;";
       break;
-
     case 'roman':
-      // Roman Numeral (No indentation)
       formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
       break;
-
     case 'number':
-      // Number (2 spaces indentation)
       formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
       break;
-
     case 'letter':
-      // Letter (5 spaces indentation)
       formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
       break;
   }
@@ -1381,8 +1439,6 @@ window.insertSmartOutline = function(type) {
   
   range.deleteContents();
   range.insertNode(frag);
-  
-  // Ilagay ang cursor sa loob ng span na may font-weight: normal
   range.collapse(false);
   selection.removeAllRanges();
   selection.addRange(range);
@@ -1392,7 +1448,6 @@ window.insertSmartOutline = function(type) {
   }
 };
 
-// Kunin ang malinis na mga linya bago ang cursor position
 function getLinesBeforeSelection(editor, range) {
   const clone = range.cloneRange();
   clone.selectNodeContents(editor);
@@ -1401,7 +1456,6 @@ function getLinesBeforeSelection(editor, range) {
   const container = document.createElement("div");
   container.appendChild(clone.cloneContents());
 
-  // Palitan ang mga line break HTML elements ng tunay na newline '\n'
   const html = container.innerHTML
     .replace(/<br\s*[\/]?>/gi, "\n")
     .replace(/<\/p>/gi, "\n")
@@ -1414,16 +1468,13 @@ function getLinesBeforeSelection(editor, range) {
   return cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 }
 
-// 1. Roman Numeral sequence (mother: ♦️)
 function getNextRomanNumeral(lines) {
   const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
   let lastRoman = null;
 
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i];
-    if (trimmed.includes("♦️")) {
-      break; // Reset sa "I." kapag may nakitang Topic (♦️) sa itaas
-    }
+    if (trimmed.includes("♦️")) break;
     const match = trimmed.match(/^([IVX]+)\./i);
     if (match) {
       lastRoman = match[1].toUpperCase();
@@ -1440,149 +1491,38 @@ function getNextRomanNumeral(lines) {
   return "I";
 }
 
-// 2. Number sequence (mother: Roman / ♦️)
 function getNextNumberSequence(lines) {
   let lastNumber = null;
-
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i];
-    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) {
-      break; // Reset sa "1." kapag may Roman Numeral o Topic sa itaas
-    }
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed)) break;
     const match = trimmed.match(/^(\d+)\./);
     if (match) {
       lastNumber = parseInt(match[1], 10);
       break;
     }
   }
-
-  if (lastNumber !== null) {
-    return lastNumber + 1;
-  }
+  if (lastNumber !== null) return lastNumber + 1;
   return 1;
 }
 
-// 3. Letter sequence (mother: Number / Roman / ♦️)
 function getNextLetterSequence(lines) {
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
   let lastLetter = null;
-
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i];
-    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed) || /^(\d+)\./.test(trimmed)) {
-      break; // Reset sa "a." kapag may Number, Roman, o Topic sa itaas
-    }
+    if (trimmed.includes("♦️") || /^([IVX]+)\./i.test(trimmed) || /^(\d+)\./.test(trimmed)) break;
     const match = trimmed.match(/^([a-z])\./i);
     if (match) {
       lastLetter = match[1].toLowerCase();
       break;
     }
   }
-
   if (lastLetter) {
     const nextIndex = alphabet.indexOf(lastLetter) + 1;
     if (nextIndex > 0 && nextIndex < alphabet.length) {
       return alphabet[nextIndex];
     }
   }
-
   return "a";
 }
-
-
-/* ==========================================
-   PREACH MATE — AUTO UPDATE CHECKER ENGINE
-   ========================================== */
-(function () {
-  const CHECK_INTERVAL = 30 * 1000;
-
-  function getLastKnownUpdate() {
-    return localStorage.getItem("pm_last_update") || "";
-  }
-
-  function checkForUpdates() {
-    fetch("./version.json?t=" + new Date().getTime(), { cache: "no-store" })
-      .then(res => res.json())
-      .then(data => {
-        const serverState = JSON.stringify(data);
-        const localState = getLastKnownUpdate();
-
-        if (!localState) {
-          localStorage.setItem("pm_last_update", serverState);
-          renderDrawerUpdate(false);
-          return;
-        }
-
-        if (serverState !== localState) {
-          renderDrawerUpdate(true, data);
-        } else {
-          renderDrawerUpdate(false);
-        }
-      })
-      .catch(err => console.log("Update check skipped:", err));
-  }
-
-  function renderDrawerUpdate(hasUpdate, serverData = null) {
-    const updateArea = document.getElementById("drawer-update-area");
-    if (!updateArea) return;
-
-    if (hasUpdate) {
-      const verStr = (serverData && serverData.version) ? ` (${serverData.version})` : "";
-      
-      updateArea.innerHTML = `
-        <div style="background: #18181b; color: #f9fafb; padding: 12px 14px; border-radius: 12px; border: 1px solid #3f3f46; display: flex; align-items: center; gap: 10px; font-size: 12px;">
-          <div style="flex: 1;">
-            <div style="font-weight: 700; color: #34d399; margin-bottom: 2px;">May bagong update!${verStr}</div>
-            <div style="color: #a1a1aa; font-size: 10px;">I-tap para makuha ang bagong features.</div>
-          </div>
-          <button id="pm-drawer-do-update" style="background: #d97706; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 11px;">
-            I-Update
-          </button>
-        </div>
-      `;
-
-      document.getElementById("pm-drawer-do-update").onclick = async () => {
-        const btn = document.getElementById("pm-drawer-do-update");
-        btn.textContent = "Updating...";
-        btn.style.pointerEvents = "none";
-        btn.style.opacity = "0.8";
-
-        try {
-          if (serverData) {
-            localStorage.setItem("pm_last_update", JSON.stringify(serverData));
-          }
-
-          if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(key => caches.delete(key)));
-          }
-
-          if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) {
-              await registration.unregister();
-            }
-          }
-        } catch (e) {
-          console.log("Update execution error:", e);
-        }
-
-        window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
-      };
-    } else {
-      updateArea.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
-          <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
-          <span style="background: rgba(255,255,255,0.1); color: inherit; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;">
-            Latest
-          </span>
-        </div>
-      `;
-    }
-  }
-
-  window.addEventListener("load", () => {
-    setTimeout(checkForUpdates, 1000);
-    setInterval(checkForUpdates, CHECK_INTERVAL);
-  });
-})();
