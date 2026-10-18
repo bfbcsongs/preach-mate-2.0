@@ -589,7 +589,6 @@ function setMode(edit){
   clearReadMarker();
   isEditMode=!!edit;
   
-  // 👉 CALL TIME BAR TOGGLE (Awtomatikong itatago sa Edit, ipapakita sa Read)
   toggleTimeBarForMode(isEditMode);
 
   if(!isEditMode){
@@ -621,14 +620,14 @@ let timerInterval = null;
 let secondsElapsed = 0;
 let isTimerRunning = false;
 
-// 1. Helper function to format 12-hour clock time as "06:57am"
+// 1. Helper function to format time as "06:57am" (lowercase, no spaces)
 function formatClockTime(date) {
   let hours = date.getHours();
   let minutes = date.getMinutes();
   const ampm = hours >= 12 ? 'pm' : 'am';
   
   hours = hours % 12;
-  hours = hours ? hours : 12; // Convert '0' to '12'
+  hours = hours ? hours : 12;
   
   const formattedHours = String(hours).padStart(2, '0');
   const formattedMinutes = String(minutes).padStart(2, '0');
@@ -636,14 +635,14 @@ function formatClockTime(date) {
   return `${formattedHours}:${formattedMinutes}${ampm}`;
 }
 
-// 2. Format elapsed seconds into MM:SS (e.g., 12:31)
+// 2. Format elapsed seconds into MM:SS
 function formatTime(totalSeconds) {
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
-// 3. Update the live "CURRENT" clock
+// 3. Update live CURRENT clock
 function updateCurrentClock() {
   const currentTimeEl = $("currentTime");
   if (!currentTimeEl) return;
@@ -657,16 +656,14 @@ function toggleTimeBarForMode(editMode) {
   if (!timeBar) return;
 
   if (!editMode) {
-    // READ MODE: Show time bar and update live clock
     timeBar.classList.remove("hidden");
     updateCurrentClock();
   } else {
-    // EDIT MODE: Hide time bar to keep editing space clear
     timeBar.classList.add("hidden");
   }
 }
 
-// 5. Controls Logic (Play/Pause, Stop, Reset)
+// 5. Single Time Bar Control Button Event Handlers
 document.addEventListener("DOMContentLoaded", () => {
   const btnPlayPause = $("btnPlayPause");
   const btnStop = $("btnStop");
@@ -680,59 +677,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!isTimerRunning) {
         if (secondsElapsed === 0 && startTimeEl) {
           startTimeEl.textContent = formatClockTime(new Date());
-        }
-        isTimerRunning = true;
-        btnPlayPause.textContent = "⏸";
-        timerInterval = setInterval(() => {
-          secondsElapsed++;
-          if (elapsedTimeEl) elapsedTimeEl.textContent = formatTime(secondsElapsed);
-        }, 1000);
-      } else {
-        isTimerRunning = false;
-        btnPlayPause.textContent = "▶";
-        clearInterval(timerInterval);
-      }
-    });
-  }
-
-  if (btnStop) {
-    btnStop.addEventListener("click", () => {
-      isTimerRunning = false;
-      clearInterval(timerInterval);
-      if (btnPlayPause) btnPlayPause.textContent = "▶";
-    });
-  }
-
-  if (btnReset) {
-    btnReset.addEventListener("click", () => {
-      isTimerRunning = false;
-      clearInterval(timerInterval);
-      secondsElapsed = 0;
-      const elapsedTimeEl = $("elapsedTime");
-      const startTimeEl = $("startTime");
-      if (elapsedTimeEl) elapsedTimeEl.textContent = "00:00";
-      if (startTimeEl) startTimeEl.textContent = "--:--";
-      if (btnPlayPause) btnPlayPause.textContent = "▶";
-    });
-  }
-});
-
-
-// Time Bar Control Button Event Handlers
-document.addEventListener("DOMContentLoaded", () => {
-  const btnPlayPause = $("btnPlayPause");
-  const btnStop = $("btnStop");
-  const btnReset = $("btnReset");
-
-  if (btnPlayPause) {
-    btnPlayPause.addEventListener("click", () => {
-      const startTimeEl = $("startTime");
-      const elapsedTimeEl = $("elapsedTime");
-
-      if (!isTimerRunning) {
-        if (secondsElapsed === 0 && startTimeEl) {
-          const now = new Date();
-          startTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
         isTimerRunning = true;
         btnPlayPause.textContent = "⏸";
