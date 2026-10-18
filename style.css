@@ -1034,3 +1034,86 @@ textarea {
     padding-right: 22px;
   }
 }
+/* ==========================================
+   ⏱️ STICKY TIME BAR STYLES
+   ========================================== */
+.time-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 8px 14px;
+  border-bottom: 1.5px solid #334155;
+  position: sticky;
+  top: 54px;
+  z-index: 35;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.time-bar.hidden {
+  display: none !important;
+}
+
+.time-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  min-width: 52px;
+}
+
+.time-item span:first-child {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #ffffff;
+}
+
+.time-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-top: 3px;
+  letter-spacing: 0.5px;
+}
+
+.elapsed-highlight {
+  color: #4ade80 !important;
+}
+
+.time-divider {
+  width: 1px;
+  height: 22px;
+  background-color: #475569;
+  margin: 0 2px;
+}
+
+.time-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.time-btn {
+  background: #334155;
+  border: 1px solid #475569;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 32px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.time-btn:active {
+  background: #475569;
+  transform: scale(0.96);
+}
