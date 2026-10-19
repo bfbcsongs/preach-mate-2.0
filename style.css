@@ -1117,3 +1117,40 @@ textarea {
   background: #475569;
   transform: scale(0.96);
 }
+/* ==========================================
+   TOPBAR ONE-LINE TITLE FIX
+   ========================================== */
+.topbar .brand-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex: 1 !important;
+  margin: 0 8px !important;
+  overflow: hidden !important;
+}
+
+.brand-text-group {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.topbar .brand {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important; /* Pinipigilan ang pag-wrap sa 2 lines */
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: #065f46 !important; /* Green shade katulad sa drawer */
+  line-height: 1.2 !important;
+}
+
+.brand-sub {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #16a34a !important;
+  margin-top: 2px !important;
+  line-height: 1 !important;
+}
