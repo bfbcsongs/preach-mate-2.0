@@ -63,7 +63,7 @@
 <body>
 <div id="app">
 
-    <header class="topbar">
+  <header class="topbar">
     <button class="icon-btn" id="btnDrawer" aria-label="Open menu">☰</button>
 
     <div class="brand-wrap" id="topbarBrand" title="Tap 5 times to change logo">
@@ -151,7 +151,7 @@
     <button class="icon-btn" id="btnMenu" title="More options" aria-label="More options">⋮</button>
   </header>
 
-  <!-- ⏱️ LIVE TIME BAR (Awtomatikong lalabas tuwing READ MODE) -->
+  <!-- ⏱️ LIVE TIME BAR -->
   <div class="time-bar hidden" id="timeBar">
     <div class="time-item">
       <span id="startTime">--:--</span>
@@ -238,13 +238,30 @@
 <script src="./cloud-sync.js" defer></script>
 <script src="./app.js" defer></script>
 
-<!-- AUTO UPDATE CHECKER SCRIPT -->
+<!-- AUTO UPDATE CHECKER SCRIPT (WITH FIREBASE SYNC) -->
 <script>
   (function () {
     const CHECK_INTERVAL = 60 * 1000;
 
     function getLastKnownUpdate() {
       return localStorage.getItem("pm_last_update") || "";
+    }
+
+    async function syncVersionToFirebase(serverState) {
+      try {
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+          const user = firebase.auth().currentUser;
+          if (user) {
+            const db = firebase.firestore();
+            await db.collection("users").doc(user.uid).set({
+              lastAppUpdate: serverState,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+        }
+      } catch (e) {
+        console.log("Firebase version sync note:", e);
+      }
     }
 
     function checkForUpdates() {
@@ -254,9 +271,9 @@
           const serverState = JSON.stringify(data);
           const localState = getLastKnownUpdate();
 
-          // Kung first time o pareho ang state, ipakita ang "VERSION: Latest"
           if (!localState) {
             localStorage.setItem("pm_last_update", serverState);
+            syncVersionToFirebase(serverState);
             renderDrawerUpdate(false);
             return;
           }
@@ -264,7 +281,6 @@
           if (serverState !== localState) {
             renderDrawerUpdate(true, data, serverState);
           } else {
-            // Updated na, itago ang banner at ipakita ang "Latest"
             renderDrawerUpdate(false);
           }
         })
@@ -278,7 +294,6 @@
       if (hasUpdate) {
         const verStr = (serverData && serverData.version) ? ` (${serverData.version})` : "";
         
-        // Ipakita ang Update Banner
         updateArea.innerHTML = `
           <div style="background: #18181b; color: #f9fafb; padding: 12px 14px; border-radius: 12px; border: 1px solid #3f3f46; display: flex; align-items: center; gap: 10px; font-size: 12px;">
             <div style="flex: 1;">
@@ -297,32 +312,33 @@
           btn.style.pointerEvents = "none";
           btn.style.opacity = "0.8";
 
-          try {
-            // 1. I-save agad ang bagong server state para pag-reload ay kilala na itong "Latest"
-            if (serverState) {
-              localStorage.setItem("pm_last_update", serverState);
-            }
+          if (serverState) {
+            localStorage.setItem("pm_last_update", serverState);
+            await syncVersionToFirebase(serverState);
+          }
 
-            // 2. Burahin ang caches at service workers
-            if ('caches' in window) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map(key => caches.delete(key)));
-            }
+          renderDrawerUpdate(false);
+
+          try {
             if ('serviceWorker' in navigator) {
               const registrations = await navigator.serviceWorker.getRegistrations();
               for (let registration of registrations) {
                 await registration.unregister();
               }
             }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map(key => caches.delete(key)));
+            }
           } catch (e) {
-            console.log("Update execution error:", e);
+            console.log("Cache clean error:", e);
           }
 
-          // 3. I-refresh ang page para bumalik sa VERSION: Latest status
-          window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
+          setTimeout(() => {
+            window.location.reload(true);
+          }, 400);
         };
       } else {
-        // Itatago ang banner at ipapakita ang status badge na "Latest"
         updateArea.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
             <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
@@ -340,7 +356,6 @@
     });
   })();
 </script>
-
 
 <!-- SMART PWA INSTALL SCRIPT -->
 <script>
