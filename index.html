@@ -254,6 +254,7 @@
           const serverState = JSON.stringify(data);
           const localState = getLastKnownUpdate();
 
+          // Kung first time o pareho ang state, ipakita ang "VERSION: Latest"
           if (!localState) {
             localStorage.setItem("pm_last_update", serverState);
             renderDrawerUpdate(false);
@@ -261,21 +262,23 @@
           }
 
           if (serverState !== localState) {
-            renderDrawerUpdate(true, data);
+            renderDrawerUpdate(true, data, serverState);
           } else {
+            // Updated na, itago ang banner at ipakita ang "Latest"
             renderDrawerUpdate(false);
           }
         })
         .catch(err => console.log("Update check skipped:", err));
     }
 
-    function renderDrawerUpdate(hasUpdate, serverData = null) {
+    function renderDrawerUpdate(hasUpdate, serverData = null, serverState = "") {
       const updateArea = document.getElementById("drawer-update-area");
       if (!updateArea) return;
 
       if (hasUpdate) {
         const verStr = (serverData && serverData.version) ? ` (${serverData.version})` : "";
         
+        // Ipakita ang Update Banner
         updateArea.innerHTML = `
           <div style="background: #18181b; color: #f9fafb; padding: 12px 14px; border-radius: 12px; border: 1px solid #3f3f46; display: flex; align-items: center; gap: 10px; font-size: 12px;">
             <div style="flex: 1;">
@@ -295,9 +298,12 @@
           btn.style.opacity = "0.8";
 
           try {
-            if (serverData) {
-              localStorage.setItem("pm_app_version", JSON.stringify(serverData));
+            // 1. I-save agad ang bagong server state para pag-reload ay kilala na itong "Latest"
+            if (serverState) {
+              localStorage.setItem("pm_last_update", serverState);
             }
+
+            // 2. Burahin ang caches at service workers
             if ('caches' in window) {
               const keys = await caches.keys();
               await Promise.all(keys.map(key => caches.delete(key)));
@@ -312,9 +318,11 @@
             console.log("Update execution error:", e);
           }
 
+          // 3. I-refresh ang page para bumalik sa VERSION: Latest status
           window.location.href = window.location.origin + window.location.pathname + '?v=' + new Date().getTime();
         };
       } else {
+        // Itatago ang banner at ipapakita ang status badge na "Latest"
         updateArea.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
             <span style="opacity: 0.6; letter-spacing: 0.5px;">VERSION:</span>
@@ -332,6 +340,7 @@
     });
   })();
 </script>
+
 
 <!-- SMART PWA INSTALL SCRIPT -->
 <script>
