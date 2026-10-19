@@ -620,7 +620,7 @@ let timerInterval = null;
 let secondsElapsed = 0;
 let isTimerRunning = false;
 
-// 1. Helper function to format time as "06:57am" (lowercase, no spaces)
+// 1. Helper function to format 12-hour time as "06:57am"
 function formatClockTime(date) {
   let hours = date.getHours();
   let minutes = date.getMinutes();
@@ -663,7 +663,7 @@ function toggleTimeBarForMode(editMode) {
   }
 }
 
-// 5. Single Time Bar Control Button Event Handlers
+// 5. Controls Logic (Play/Pause, Stop, Reset)
 document.addEventListener("DOMContentLoaded", () => {
   const btnPlayPause = $("btnPlayPause");
   const btnStop = $("btnStop");
@@ -1414,7 +1414,9 @@ appStartupPromise
 
 })();
 
-/* SMART OUTLINE FORMATTER */
+/* ==========================================
+   PREACH MATE — SMART OUTLINE FORMATTER (WITH UNDO/REDO SUPPORT)
+   ========================================== */
 window.insertSmartOutline = function(type) {
   const editor = document.getElementById("noteBody");
   if (!editor) return;
@@ -1424,37 +1426,47 @@ window.insertSmartOutline = function(type) {
   if (!selection.rangeCount) return;
 
   const range = selection.getRangeAt(0);
+
+  // Kunin ang mga linya bago ang cursor position
   const linesBeforeCursor = getLinesBeforeSelection(editor, range);
+
   let formattedPrefix = "";
 
   switch (type) {
     case 'topic':
-      formattedPrefix = "<b>♦️ </b><span style='font-weight:normal;'>&#8203;";
+      formattedPrefix = "<b>♦️ </b><span style='font-weight:normal;'>&#8203;</span>";
       break;
+
     case 'roman':
-      formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
+      formattedPrefix = "<b>" + getNextRomanNumeral(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;</span>";
       break;
+
     case 'number':
-      formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
+      formattedPrefix = "&nbsp;&nbsp;<b>" + getNextNumberSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;</span>";
       break;
+
     case 'letter':
-      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;";
+      formattedPrefix = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNextLetterSequence(linesBeforeCursor) + ".</b>&nbsp;<span style='font-weight:normal;'>&#8203;</span>";
       break;
   }
 
-  const tempDiv = document.createElement("div");
-  tempDiv.innerHTML = formattedPrefix;
-  const frag = document.createDocumentFragment();
-  let node;
-  while ((node = tempDiv.firstChild)) {
-    frag.appendChild(node);
+  // Use execCommand("insertHTML") so the operation is added to the browser's undo/redo history stack!
+  if (document.queryCommandSupported("insertHTML")) {
+    document.execCommand("insertHTML", false, formattedPrefix);
+  } else {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = formattedPrefix;
+    const frag = document.createDocumentFragment();
+    let node;
+    while ((node = tempDiv.firstChild)) {
+      frag.appendChild(node);
+    }
+    range.deleteContents();
+    range.insertNode(frag);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
-  
-  range.deleteContents();
-  range.insertNode(frag);
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
 
   if (typeof saveCurrentNote === "function") {
     saveCurrentNote();
